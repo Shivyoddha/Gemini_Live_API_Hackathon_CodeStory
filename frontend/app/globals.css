@@ -1,12 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Google+Sans+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Google Brand Colors ──────────────────────────────────────────────────── */
 :root {
-  --font-inter: 'Inter', sans-serif;
-  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+  --g-blue: #4285F4;
+  --g-red: #DB4437;
+  --g-yellow: #F4B400;
+  --g-green: #0F9D58;
+  --g-blue-light: #8AB4F8;
+  --g-blue-dark: #1A73E8;
+  --g-surface: #FFFFFF;
+  --g-surface-1: #F8F9FA;
+  --g-surface-2: #F1F3F4;
+  --g-surface-3: #E8EAED;
+  --g-on-surface: #202124;
+  --g-on-surface-2: #5F6368;
+  --g-on-surface-3: #80868B;
+  --g-border: #DADCE0;
+  --font-google: 'Google Sans', 'Roboto', sans-serif;
+  --font-mono: 'Google Sans Mono', 'JetBrains Mono', monospace;
+}
+
+/* Dark mode for the session view only */
+.dark-session {
+  --g-surface: #1A1C20;
+  --g-surface-1: #202124;
+  --g-surface-2: #2C2E33;
+  --g-surface-3: #3C4043;
+  --g-on-surface: #E8EAED;
+  --g-on-surface-2: #9AA0A6;
+  --g-on-surface-3: #5F6368;
+  --g-border: #3C4043;
 }
 
 * {
@@ -19,149 +46,268 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  background: #0a0b14;
+  background: var(--g-surface);
+  color: var(--g-on-surface);
+  font-family: var(--font-google);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar */
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #0f1020;
+  background: var(--g-surface-2);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #333586;
+  background: var(--g-surface-3);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #6272fa;
+  background: var(--g-on-surface-3);
 }
 
-/* Glassmorphism base */
-.glass {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* ─── Google Card (Material You) ───────────────────────────────────────────── */
+.g-card {
+  background: var(--g-surface);
+  border: 1px solid var(--g-border);
+  border-radius: 16px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.glass-strong {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.g-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.05);
 }
 
-/* Gradient text utility */
-.gradient-text {
-  background: linear-gradient(135deg, #6272fa 0%, #a78bfa 50%, #f472b6 100%);
+.g-card-selected {
+  border-color: var(--g-blue);
+  box-shadow: 0 0 0 1px var(--g-blue), 0 4px 16px rgba(66, 133, 244, 0.15);
+}
+
+/* ─── Google Button Styles ──────────────────────────────────────────────────── */
+.g-btn-primary {
+  background: var(--g-blue);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-family: var(--font-google);
+  font-weight: 500;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.g-btn-primary:hover {
+  background: var(--g-blue-dark);
+  box-shadow: 0 2px 6px rgba(66, 133, 244, 0.4);
+}
+
+.g-btn-outline {
+  background: transparent;
+  color: var(--g-blue);
+  border: 1px solid var(--g-border);
+  border-radius: 24px;
+  font-family: var(--font-google);
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.g-btn-outline:hover {
+  background: rgba(66, 133, 244, 0.06);
+}
+
+/* ─── Google Input ──────────────────────────────────────────────────────────── */
+.g-input {
+  border: 1px solid var(--g-border);
+  border-radius: 8px;
+  background: var(--g-surface);
+  color: var(--g-on-surface);
+  font-family: var(--font-google);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.g-input:focus {
+  border-color: var(--g-blue);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+/* ─── Google-colored logo text ──────────────────────────────────────────────── */
+.g-logo-text .letter-c {
+  color: var(--g-blue);
+}
+
+.g-logo-text .letter-o1 {
+  color: var(--g-red);
+}
+
+.g-logo-text .letter-d {
+  color: var(--g-yellow);
+}
+
+.g-logo-text .letter-e {
+  color: var(--g-blue);
+}
+
+.g-logo-text .story {
+  color: var(--g-green);
+}
+
+/* ─── Google gradient line (4-color) ───────────────────────────────────────── */
+.g-gradient-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--g-blue) 0%, var(--g-red) 33%, var(--g-yellow) 66%, var(--g-green) 100%);
+}
+
+.g-gradient-text {
+  background: linear-gradient(135deg, var(--g-blue) 0%, var(--g-green) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-text-blue {
-  background: linear-gradient(135deg, #6272fa 0%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ─── Session page (dark) ───────────────────────────────────────────────────── */
+.session-surface {
+  background: #1A1C20;
+  color: #E8EAED;
 }
 
-/* Glow effects */
-.glow-brand {
-  box-shadow: 0 0 30px rgba(98, 114, 250, 0.4), 0 0 60px rgba(98, 114, 250, 0.1);
+.session-card {
+  background: #202124;
+  border: 1px solid #3C4043;
+  border-radius: 12px;
 }
 
-.glow-brand-hover:hover {
-  box-shadow: 0 0 40px rgba(98, 114, 250, 0.5), 0 0 80px rgba(98, 114, 250, 0.15);
+.session-card-blue {
+  background: rgba(66, 133, 244, 0.08);
+  border: 1px solid rgba(66, 133, 244, 0.25);
+  border-radius: 12px;
 }
 
-/* Grid pattern background */
-.bg-grid {
-  background-image: 
-    linear-gradient(rgba(98, 114, 250, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(98, 114, 250, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
+/* ─── Animations ────────────────────────────────────────────────────────────── */
+.slide-enter {
+  animation: slideEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Animated gradient orb */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.15;
-  animation: orbFloat 8s ease-in-out infinite;
+@keyframes slideEnter {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-@keyframes orbFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-/* Audio waveform animation */
+/* Audio waveform */
 .waveform-bar {
   animation: waveform 1.2s ease-in-out infinite;
 }
 
 @keyframes waveform {
-  0%, 100% { transform: scaleY(0.3); }
-  50% { transform: scaleY(1); }
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Pulsing recording dot */
+.rec-pulse {
+  animation: recPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.3);
+  }
+}
+
+/* Shimmer for progress bars */
+.progress-shimmer {
+  background: linear-gradient(90deg, rgba(66, 133, 244, 0.3) 0%, rgba(66, 133, 244, 0.8) 50%, rgba(66, 133, 244, 0.3) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Typing cursor */
 .cursor-blink::after {
   content: '|';
   animation: blink 1s step-end infinite;
-  color: #6272fa;
+  color: var(--g-blue);
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
-/* Code highlight */
-.code-highlight {
-  background: linear-gradient(135deg, rgba(98, 114, 250, 0.1), rgba(167, 139, 250, 0.05));
-  border-left: 3px solid #6272fa;
-}
-
-/* Slide transition */
-.slide-enter {
-  animation: slideEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideEnter {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Pulse ring for active audio */
-.pulse-ring {
-  animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-@keyframes pulseRing {
-  0% { transform: scale(0.8); opacity: 1; }
-  80%, 100% { transform: scale(2); opacity: 0; }
-}
-
-/* Mermaid diagram container */
+/* Mermaid */
 .mermaid-container .mermaid svg {
   max-width: 100%;
   height: auto;
 }
 
-/* Progress bar animation */
-.progress-shimmer {
-  background: linear-gradient(90deg, rgba(98, 114, 250, 0.3) 0%, rgba(98, 114, 250, 0.8) 50%, rgba(98, 114, 250, 0.3) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+/* Code highlight */
+.code-highlight {
+  background: rgba(66, 133, 244, 0.06);
+  border-left: 3px solid var(--g-blue);
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* Google surface shadow */
+.g-shadow-sm {
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.g-shadow-md {
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+/* Video preview box */
+.video-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--g-blue);
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+}
+
+/* Live badge */
+.live-badge {
+  background: rgba(15, 157, 88, 0.12);
+  border: 1px solid rgba(15, 157, 88, 0.4);
+  color: #0F9D58;
+  border-radius: 20px;
 }

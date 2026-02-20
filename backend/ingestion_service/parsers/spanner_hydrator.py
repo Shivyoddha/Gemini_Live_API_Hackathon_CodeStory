@@ -1,14 +1,13 @@
 """
 Spanner Graph Hydrator — writes parsed code nodes and edges into Spanner Graph.
 Uses the CodeStory property graph schema.
+Falls back gracefully when GCP auth is not available locally.
 """
 
 import asyncio
 import os
 from typing import List, Dict, Any
 from loguru import logger
-from google.cloud import spanner
-from google.cloud.spanner_v1 import param_types
 
 from .ast_parser import CodeNode
 
@@ -19,14 +18,25 @@ class SpannerHydrator:
         self.project_id = os.getenv("GCP_PROJECT_ID", "gemini-live-api-hackathon")
         self.instance_id = os.getenv("SPANNER_INSTANCE_ID", "cloud-codestory")
         self.database_id = os.getenv("SPANNER_DATABASE_ID", "cymbal")
+        self.database = None
+        self._available = False
 
-        client = spanner.Client(project=self.project_id)
-        instance = client.instance(self.instance_id)
-        self.database = instance.database(self.database_id)
-        logger.info(f"SpannerHydrator connected to {self.instance_id}/{self.database_id}")
+        try:
+            from google.cloud import spanner
+            client = spanner.Client(project=self.project_id)
+            instance = client.instance(self.instance_id)
+            self.database = instance.database(self.database_id)
+            self._available = True
+            logger.info(f"SpannerHydrator connected to {self.instance_id}/{self.database_id}")
+        except Exception as e:
+            logger.warning(f"Spanner unavailable (will skip graph hydration): {e}")
 
     async def hydrate(self, nodes: List[CodeNode]) -> None:
-        """Write all code nodes as graph vertices."""
+        """Write all code nodes as graph vertices. Skips if Spanner is unavailable."""
+        if not self._available:
+            logger.warning(f"Skipping Spanner hydration for {len(nodes)} nodes (Spanner unavailable).")
+            return
+
         loop = asyncio.get_event_loop()
         source_files = [n for n in nodes if n.node_type == "SourceFile"]
         class_objects = [n for n in nodes if n.node_type == "ClassObject"]
@@ -97,7 +107,11 @@ class SpannerHydrator:
                 )
 
     async def build_edges(self, nodes: List[CodeNode]) -> None:
-        """Build relationship edges: IMPORTS, CALLS, DECLARES, EXTENDS."""
+        """Build relationship edges: IMPORTS, CALLS, DECLARES, EXTENDS. Skips if Spanner unavailable."""
+        if not self._available:
+            logger.warning("Skipping Spanner edge building (Spanner unavailable).")
+            return
+
         loop = asyncio.get_event_loop()
         edges = self._extract_edges(nodes)
         if edges:

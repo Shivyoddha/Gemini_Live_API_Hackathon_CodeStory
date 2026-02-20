@@ -3,43 +3,44 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Mic, Layers, Search, Play, Star, Zap, BookOpen } from "lucide-react";
+import { Github, Mic, Layers, Search, Play, Zap } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import Image from "next/image";
 
 const MODES = [
     {
         id: "architecture",
         icon: Layers,
         title: "Architecture Walkthrough",
-        description:
-            "AI narrates the entire codebase from entry points outward, building a mental map with real-time diagrams.",
-        gradient: "from-brand-500 to-violet-500",
-        glow: "rgba(98,114,250,0.4)",
+        description: "AI narrates the entire codebase from entry points outward, building a mental map with real-time diagrams.",
+        color: "#4285F4",
+        bg: "rgba(66,133,244,0.06)",
+        border: "rgba(66,133,244,0.25)",
     },
     {
         id: "flow",
         icon: Search,
         title: "Flow-Based Explanation",
-        description:
-            'Trace a specific flow end-to-end — "Explain the authentication process" — with sequence diagrams and call graphs.',
-        gradient: "from-violet-500 to-fuchsia-500",
-        glow: "rgba(167,139,250,0.4)",
+        description: 'Trace a specific flow end-to-end — "Explain the auth process" — with sequence diagrams and call graphs.',
+        color: "#DB4437",
+        bg: "rgba(219,68,55,0.06)",
+        border: "rgba(219,68,55,0.25)",
     },
     {
         id: "qa",
         icon: Mic,
         title: "Immersive Q&A",
-        description:
-            "Open conversation with an AI that knows every function, class, and commit in the repo. Ask anything.",
-        gradient: "from-fuchsia-500 to-pink-500",
-        glow: "rgba(232,121,249,0.4)",
+        description: "Open conversation with an AI that knows every function, class, and commit in the repo. Ask anything.",
+        color: "#0F9D58",
+        bg: "rgba(15,157,88,0.06)",
+        border: "rgba(15,157,88,0.25)",
     },
 ];
 
 const PERSONAS = [
     { id: "architect", label: "The Architect", emoji: "🏗️", desc: "High-level design & trade-offs" },
     { id: "debugger", label: "The Debugger", emoji: "🔍", desc: "Edge cases & logical pitfalls" },
-    { id: "historian", label: "The Historian", emoji: "📜", desc: "Why decisions were made (git insights)" },
+    { id: "historian", label: "The Historian", emoji: "📜", desc: "Why decisions were made" },
 ];
 
 export default function LandingPage() {
@@ -53,10 +54,7 @@ export default function LandingPage() {
     const [error, setError] = useState("");
 
     const handleStart = async () => {
-        if (!repoUrl.trim()) {
-            setError("Please enter a GitHub repository URL.");
-            return;
-        }
+        if (!repoUrl.trim()) { setError("Please enter a GitHub repository URL."); return; }
         setError("");
         setLoading(true);
         const sessionId = uuidv4();
@@ -75,29 +73,24 @@ export default function LandingPage() {
     };
 
     return (
-        <div className="relative min-h-screen bg-surface overflow-hidden">
-            {/* Background orbs */}
-            <div className="orb w-[600px] h-[600px] bg-brand-600 top-[-200px] left-[-200px]" />
-            <div className="orb w-[400px] h-[400px] bg-violet-600 top-[40%] right-[-100px]" style={{ animationDelay: "3s" }} />
-            <div className="orb w-[300px] h-[300px] bg-fuchsia-600 bottom-[10%] left-[20%]" style={{ animationDelay: "6s" }} />
-
-            {/* Grid overlay */}
-            <div className="absolute inset-0 bg-grid opacity-100 pointer-events-none" />
+        <div className="min-h-screen" style={{ background: "#FFFFFF", fontFamily: "'Google Sans', Roboto, sans-serif" }}>
+            {/* 4-color Google top bar */}
+            <div className="g-gradient-bar" />
 
             {/* Navbar */}
-            <nav className="relative z-10 flex items-center justify-between px-8 py-5 border-b border-white/5">
+            <nav style={{ borderBottom: "1px solid #DADCE0", padding: "12px 32px" }}
+                className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center glow-brand">
-                        <BookOpen className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="font-bold text-xl tracking-tight gradient-text-blue">CodeStory</span>
+                    <Image src="/logo.png" alt="CodeStory" width={160} height={44} priority style={{ objectFit: "contain" }} />
                 </div>
-                <div className="flex items-center gap-6 text-sm text-white/50">
-                    <a href="https://github.com/Shivyoddha/Gemini_Live_API_Hackathon_CodeStory" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">
-                        <Github className="w-4 h-4" />
-                        GitHub
+                <div className="flex items-center gap-4 text-sm" style={{ color: "#5F6368" }}>
+                    <a href="https://github.com/Shivyoddha/Gemini_Live_API_Hackathon_CodeStory"
+                        target="_blank" rel="noreferrer"
+                        className="flex items-center gap-1.5 hover:underline">
+                        <Github className="w-4 h-4" /> GitHub
                     </a>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full"
+                        style={{ background: "rgba(66,133,244,0.1)", color: "#4285F4", border: "1px solid rgba(66,133,244,0.2)", fontSize: 12 }}>
                         <Zap className="w-3 h-3" />
                         Gemini 2.5 Flash Live
                     </div>
@@ -105,57 +98,63 @@ export default function LandingPage() {
             </nav>
 
             {/* Hero */}
-            <main className="relative z-10 flex flex-col items-center px-6 pt-20 pb-16">
+            <main className="flex flex-col items-center px-6 pt-16 pb-20">
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="text-center max-w-4xl"
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-center max-w-3xl w-full"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-brand-500/20 mb-8 text-sm text-brand-300">
-                        <Star className="w-3.5 h-3.5 fill-brand-400 text-brand-400" />
-                        Built for the Gemini Live API Hackathon · Creative Story Track
+                    {/* Hackathon badge */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-sm"
+                        style={{ background: "rgba(15,157,88,0.08)", border: "1px solid rgba(15,157,88,0.2)", color: "#0F9D58" }}>
+                        ⭐ Built for the Gemini Live API Hackathon · Creative Story Track
                     </div>
 
-                    <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight mb-6 leading-none">
+                    <h1 className="text-6xl font-normal tracking-tight mb-5 leading-tight" style={{ color: "#202124" }}>
                         Your codebase,{" "}
-                        <span className="gradient-text">narrated live.</span>
+                        <span style={{
+                            background: "linear-gradient(135deg, #4285F4 0%, #0F9D58 100%)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                            fontWeight: 700,
+                        }}>narrated live.</span>
                     </h1>
 
-                    <p className="text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed">
+                    <p className="text-xl mb-12 leading-relaxed" style={{ color: "#5F6368" }}>
                         Paste any GitHub URL. CodeStory ingests the repo into a{" "}
-                        <span className="text-brand-400">Spanner Graph</span>, then a Gemini AI agent walks
-                        you through it — speaking, showing slides, and answering your questions — in real time.
+                        <span style={{ color: "#4285F4", fontWeight: 500 }}>Spanner Graph</span>, then a Gemini
+                        AI agent walks you through it — speaking, showing slides, and answering your{" "}
+                        <span style={{ color: "#0F9D58", fontWeight: 500 }}>voice & video</span> questions — in real time.
                     </p>
 
-                    {/* Input card */}
-                    <div className="w-full max-w-2xl mx-auto glass rounded-2xl p-6 mb-10 border border-white/10">
-                        <label className="block text-xs font-medium text-white/40 uppercase tracking-widest mb-3 text-left">
-                            GitHub Repository URL
-                        </label>
+                    {/* URL Input card */}
+                    <div className="w-full max-w-2xl mx-auto mb-10 g-card p-6 g-shadow-sm">
+                        <label className="block text-xs font-medium uppercase tracking-widest mb-3 text-left"
+                            style={{ color: "#5F6368" }}>GitHub Repository URL</label>
                         <div className="flex gap-3">
-                            <div className="flex-1 flex items-center gap-3 bg-surface-2 rounded-xl px-4 py-3 border border-white/10 focus-within:border-brand-500/50 transition-colors">
-                                <Github className="w-4 h-4 text-white/30 flex-shrink-0" />
+                            <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl g-input focus-within:border-blue-500"
+                                style={{ border: "1px solid #DADCE0" }}>
+                                <Github className="w-4 h-4 flex-shrink-0" style={{ color: "#9AA0A6" }} />
                                 <input
                                     type="text"
                                     value={repoUrl}
                                     onChange={(e) => setRepoUrl(e.target.value)}
                                     placeholder="https://github.com/owner/repo"
-                                    className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none font-mono"
+                                    className="flex-1 bg-transparent text-sm outline-none font-mono"
+                                    style={{ color: "#202124" }}
                                     onKeyDown={(e) => e.key === "Enter" && handleStart()}
                                 />
                             </div>
                         </div>
-                        {error && (
-                            <p className="text-red-400 text-xs mt-2 text-left">{error}</p>
-                        )}
+                        {error && <p className="text-xs mt-2 text-left" style={{ color: "#DB4437" }}>{error}</p>}
                     </div>
 
                     {/* Mode selector */}
                     <div className="w-full max-w-4xl mx-auto mb-8">
-                        <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">
-                            Choose Your Session Mode
-                        </p>
+                        <p className="text-xs font-medium uppercase tracking-widest mb-4 text-left"
+                            style={{ color: "#80868B" }}>Choose Your Session Mode</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {MODES.map((mode) => {
                                 const Icon = mode.icon;
@@ -166,20 +165,21 @@ export default function LandingPage() {
                                         onClick={() => setSelectedMode(mode.id)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className={`relative text-left p-5 rounded-xl border transition-all duration-300 ${isSelected
-                                                ? "border-brand-500/50 bg-brand-500/10"
-                                                : "border-white/8 glass hover:border-white/20"
-                                            }`}
-                                        style={isSelected ? { boxShadow: `0 0 30px ${mode.glow}` } : {}}
+                                        className="text-left p-5 rounded-2xl border transition-all duration-200"
+                                        style={{
+                                            background: isSelected ? mode.bg : "#FFFFFF",
+                                            border: `1px solid ${isSelected ? mode.color : "#DADCE0"}`,
+                                            boxShadow: isSelected
+                                                ? `0 0 0 1px ${mode.color}40, 0 4px 12px ${mode.color}20`
+                                                : "0 1px 3px rgba(60,64,67,0.08)",
+                                        }}
                                     >
-                                        {isSelected && (
-                                            <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${mode.gradient} opacity-5`} />
-                                        )}
-                                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${mode.gradient} flex items-center justify-center mb-3`}>
-                                            <Icon className="w-4 h-4 text-white" />
+                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                                            style={{ background: mode.bg, border: `1px solid ${mode.border}` }}>
+                                            <Icon className="w-4 h-4" style={{ color: mode.color }} />
                                         </div>
-                                        <h3 className="font-semibold text-sm text-white mb-1.5">{mode.title}</h3>
-                                        <p className="text-xs text-white/40 leading-relaxed">{mode.description}</p>
+                                        <h3 className="font-medium text-sm mb-1.5" style={{ color: "#202124" }}>{mode.title}</h3>
+                                        <p className="text-xs leading-relaxed" style={{ color: "#5F6368" }}>{mode.description}</p>
                                     </motion.button>
                                 );
                             })}
@@ -188,73 +188,73 @@ export default function LandingPage() {
 
                     {/* Persona selector */}
                     <div className="w-full max-w-4xl mx-auto mb-10">
-                        <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">
-                            Choose AI Narrator Persona
-                        </p>
-                        <div className="flex gap-3 justify-center flex-wrap">
+                        <p className="text-xs font-medium uppercase tracking-widest mb-4 text-left"
+                            style={{ color: "#80868B" }}>Choose AI Narrator Persona</p>
+                        <div className="flex gap-3 flex-wrap">
                             {PERSONAS.map((p) => (
                                 <motion.button
                                     key={p.id}
                                     onClick={() => setSelectedPersona(p.id)}
-                                    whileHover={{ scale: 1.04 }}
-                                    whileTap={{ scale: 0.96 }}
-                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${selectedPersona === p.id
-                                            ? "border-brand-500/60 bg-brand-500/15 text-brand-300"
-                                            : "border-white/10 glass text-white/50 hover:text-white/80 hover:border-white/20"
-                                        }`}
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    className="flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-medium transition-all"
+                                    style={{
+                                        background: selectedPersona === p.id ? "rgba(66,133,244,0.1)" : "#FFFFFF",
+                                        border: `1px solid ${selectedPersona === p.id ? "#4285F4" : "#DADCE0"}`,
+                                        color: selectedPersona === p.id ? "#4285F4" : "#5F6368",
+                                    }}
                                 >
                                     <span>{p.emoji}</span>
                                     <span>{p.label}</span>
-                                    <span className={`text-xs ${selectedPersona === p.id ? "text-brand-400/70" : "text-white/30"}`}>
-                                        · {p.desc}
-                                    </span>
+                                    <span className="text-xs" style={{ opacity: 0.6 }}>· {p.desc}</span>
                                 </motion.button>
                             ))}
                         </div>
                     </div>
 
-                    {/* CTA */}
+                    {/* CTA Button */}
                     <motion.button
                         onClick={handleStart}
                         disabled={loading}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-brand-500 to-violet-500 text-white font-bold text-lg shadow-lg glow-brand glow-brand-hover transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.02, boxShadow: "0 4px 16px rgba(66,133,244,0.4)" }}
+                        whileTap={{ scale: 0.98 }}
+                        className="inline-flex items-center gap-3 px-10 py-4 rounded-full text-white font-medium text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={{ background: loading ? "#9AA0A6" : "#4285F4" }}
                     >
                         {loading ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                 Initializing CodeStory…
                             </>
                         ) : (
                             <>
-                                <Play className="w-5 h-5" />
+                                <Play className="w-4 h-4 fill-white" />
                                 Begin the Story
                             </>
                         )}
                     </motion.button>
 
-                    <p className="text-xs text-white/25 mt-4">
-                        Powered by Gemini 2.5 Flash Live API · Spanner Graph · Vertex AI Reasoning Engine
+                    <p className="text-xs mt-4" style={{ color: "#9AA0A6" }}>
+                        Powered by Gemini 2.5 Flash Live API · Spanner Graph · Vertex AI
                     </p>
                 </motion.div>
 
                 {/* Stats row */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.6 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
                     className="flex gap-12 mt-20 text-center"
                 >
                     {[
-                        { label: "Latency", value: "<500ms", sub: "Audio response" },
-                        { label: "Format", value: "PCM 16kHz", sub: "Native audio" },
-                        { label: "Memory", value: "∞ Session", sub: "With compression" },
-                        { label: "Models", value: "3 Agents", sub: "Multi-agent AI" },
+                        { label: "Audio Latency", value: "<500ms", color: "#4285F4" },
+                        { label: "Input Modes", value: "Voice + Video", color: "#0F9D58" },
+                        { label: "Memory", value: "∞ Context", color: "#F4B400" },
+                        { label: "AI Agents", value: "3 Personas", color: "#DB4437" },
                     ].map((stat) => (
                         <div key={stat.label} className="flex flex-col">
-                            <span className="text-2xl font-bold gradient-text-blue">{stat.value}</span>
-                            <span className="text-xs text-white/50 mt-0.5">{stat.sub}</span>
+                            <span className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</span>
+                            <span className="text-xs mt-1" style={{ color: "#9AA0A6" }}>{stat.label}</span>
                         </div>
                     ))}
                 </motion.div>

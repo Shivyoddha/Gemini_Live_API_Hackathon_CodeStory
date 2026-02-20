@@ -6,13 +6,22 @@ Handles render_slide, generate_mermaid_flow, find_dependencies, show_modal.
 import asyncio
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi import WebSocket
 from loguru import logger
 
-from .spanner_client import SpannerGraphClient
+# Lazy-initialize Spanner client so server starts even without GCP auth locally
+_spanner: Optional[object] = None
 
-_spanner = SpannerGraphClient()
+def _get_spanner():
+    global _spanner
+    if _spanner is None:
+        try:
+            from .spanner_client import SpannerGraphClient
+            _spanner = SpannerGraphClient()
+        except Exception as e:
+            logger.warning(f"Spanner unavailable (running without graph queries): {e}")
+    return _spanner
 
 
 async def handle_tool_call(
@@ -55,7 +64,10 @@ async def handle_tool_call(
         depth = args.get("depth", 1)
 
         try:
-            results = await _spanner.find_dependencies(
+            spanner = _get_spanner()
+            if spanner is None:
+                return {"status": "ok", "results": [], "count": 0, "note": "Spanner not configured"}
+            results = await spanner.find_dependencies(
                 session_id=session_id,
                 entity_name=entity_name,
                 relationship=relationship,

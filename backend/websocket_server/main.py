@@ -30,45 +30,63 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GCP_PROJECT = os.getenv("GCP_PROJECT_ID", "gemini-live-api-hackathon")
 GCP_LOCATION = os.getenv("GCP_LOCATION", "us-central1")
-GEMINI_MODEL = "gemini-2.5-flash-live-001"  # Gemini 2.5 Flash Live
+USE_VERTEXAI = os.getenv("GEMINI_USE_VERTEXAI", "false").lower() == "true"
+
+# Models supporting bidiGenerateContent (Live API):
+#   AI Studio: gemini-2.5-flash-native-audio-latest, gemini-2.0-flash-exp-image-generation
+#   Vertex AI: gemini-2.5-flash-live-001
+GEMINI_MODEL = (
+    "gemini-2.5-flash-live-001" if USE_VERTEXAI
+    else "gemini-2.5-flash-native-audio-latest"
+)
 
 # Persona system prompts
 PERSONA_PROMPTS = {
     "architect": (
-        "You are 'The Architect', an expert software architect narrating this codebase. "
-        "Focus on high-level design patterns, system trade-offs, and architectural decisions. "
-        "Use clear, engaging language. Speak in a calm, authoritative tone. "
-        "When you want to show a slide or diagram, use the render_slide or generate_mermaid_flow tools."
+        "You are 'The Architect', an expert software architect narrating this codebase live to a developer. "
+        "CRITICAL PACING RULES:\n"
+        "1. Speak SLOWLY and clearly. After each key point, PAUSE and say 'Feel free to ask a question or say continue.' "
+        "2. ALWAYS call render_slide FIRST with the content, THEN speak about it — so the slide appears before your narration. "
+        "3. Cover ONE component per turn, then STOP and wait for the user to respond (say continue or ask a question). "
+        "4. Keep each narration segment to 30-45 seconds max before pausing. "
+        "5. If the user speaks mid-narration, IMMEDIATELY stop and address their question before continuing. "
+        "Focus on design patterns, system trade-offs, and architectural decisions."
     ),
     "debugger": (
         "You are 'The Debugger', a meticulous senior engineer analyzing this codebase. "
-        "Focus on edge cases, error handling, potential bugs, and logical pitfalls. "
-        "Be precise and technical. Highlight risks and suggest improvements. "
-        "When you want to show a slide or diagram, use the render_slide or generate_mermaid_flow tools."
+        "CRITICAL PACING RULES:\n"
+        "1. Speak SLOWLY. After identifying each issue, PAUSE and ask if they want to dig deeper. "
+        "2. Call render_slide FIRST with the relevant code, THEN explain the issue. "
+        "3. Cover ONE bug or edge case per turn, then stop and wait. "
+        "Focus on edge cases, error handling, potential bugs, and logical pitfalls."
     ),
     "historian": (
         "You are 'The Historian', a software storyteller tracing the evolution of this codebase. "
-        "Focus on why certain decisions were made, the evolution of the code, git insights, and context. "
-        "Tell the story behind the code with richness and depth. "
-        "When you want to show a slide or diagram, use the render_slide or generate_mermaid_flow tools."
+        "CRITICAL PACING RULES:\n"
+        "1. Speak SLOWLY and conversationally. Pause between each story chapter. "
+        "2. Call render_slide FIRST with relevant code, THEN tell the story behind it. "
+        "3. After each chapter, stop and ask if they want to continue or explore a specific area. "
+        "Focus on why certain decisions were made and the evolution of the code."
     ),
 }
 
 MODE_INSTRUCTIONS = {
     "architecture": (
-        "Begin with a high-level architectural overview. Identify entry points (main.py, index.js, app.py, etc.) "
-        "and narrate the flow from there. Use render_slide frequently to show slides about each component. "
-        "Start immediately without waiting for user prompts."
+        "Start with a brief 2-sentence overview of what this repo does. "
+        "Then say: 'I'll walk you through the architecture one component at a time. Say continue after each section, or ask me anything.' "
+        "For each component: (1) call render_slide with the code FIRST, (2) then narrate for 20-30 seconds, (3) then STOP and wait. "
+        "Do NOT rush through everything at once. Cover entry points first, then core services, then utilities."
     ),
     "flow": (
-        "Ask the user which flow they want to explore (e.g., 'authentication', 'payment', 'API request lifecycle'). "
-        "Then trace that flow end-to-end across all modules using the find_dependencies tool. "
-        "Generate sequence diagrams showing the request lifecycle."
+        "Ask the user which specific flow they want to trace (authentication, API request, etc.). "
+        "Wait for their response. Then trace that flow step by step. "
+        "For each step: call render_slide FIRST, then narrate briefly, then pause."
     ),
     "qa": (
-        "Wait for the user's questions. Answer anything about the repository using your knowledge graph. "
-        "Adjust technical depth based on the user's apparent expertise level (Affective Dialog). "
-        "Reference specific files, line numbers, and functions in your answers."
+        "Wait for the user's question. Answer concisely and specifically. "
+        "Use render_slide to show relevant code when answering. "
+        "After each answer, wait — do NOT volunteer more information unless asked. "
+        "Adjust technical depth based on how the user asks their questions."
     ),
 }
 
@@ -173,7 +191,13 @@ async def websocket_session(
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        # Use Vertex AI (OAuth2/ADC) or AI Studio (API key)
+        if USE_VERTEXAI:
+            client = genai.Client(vertexai=True, project=GCP_PROJECT, location=GCP_LOCATION)
+            logger.info(f"Using Vertex AI client for session {session_id}")
+        else:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            logger.info(f"Using AI Studio client (api_key) for session {session_id}")
 
         config = types.LiveConnectConfig(
             response_modalities=["AUDIO"],
@@ -206,25 +230,36 @@ async def websocket_session(
             logger.info(f"Gemini Live session established for {session_id}")
 
             async def browser_to_gemini():
-                """Relay browser audio/text → Gemini Live API."""
+                """Relay browser audio/text/video → Gemini Live API."""
                 while True:
                     try:
                         raw = await websocket.receive_text()
                         msg = json.loads(raw)
 
                         if msg["type"] == "audio_chunk":
-                            # Convert list of ints back to bytes
+                            # Convert list of ints back to bytes (16kHz PCM)
                             pcm_bytes = bytes(msg["data"])
-                            await gemini_session.send(
-                                input=types.RealtimeInput(
-                                    audio=types.Blob(data=pcm_bytes, mime_type="audio/pcm;rate=16000")
-                                )
+                            await gemini_session.send_realtime_input(
+                                audio=types.Blob(data=pcm_bytes, mime_type="audio/pcm;rate=16000")
                             )
 
+                        elif msg["type"] == "video_frame":
+                            # Camera frame from user: data URL "data:image/jpeg;base64,..."
+                            try:
+                                data_url = msg["data"]
+                                if "base64," in data_url:
+                                    b64_data = data_url.split("base64,")[1]
+                                    frame_bytes = base64.b64decode(b64_data)
+                                    await gemini_session.send_realtime_input(
+                                        video=types.Blob(data=frame_bytes, mime_type="image/jpeg")
+                                    )
+                            except Exception as ve:
+                                logger.debug(f"Video frame error: {ve}")
+
                         elif msg["type"] == "text_input":
-                            await gemini_session.send(
-                                input=msg["text"], end_of_turn=True
-                            )
+                            # Use send_realtime_input (NOT send_client_content) to keep VAD
+                            # streaming mode active — this allows tool/function calls to fire
+                            await gemini_session.send_realtime_input(text=msg["text"])
                             await websocket.send_json({
                                 "type": "transcript",
                                 "role": "user",
@@ -244,24 +279,41 @@ async def websocket_session(
 
                 async for response in gemini_session.receive():
                     try:
-                        # Handle audio data
-                        if response.data:
+                        # ── Audio: for native-audio model, audio is in inline_data of model_turn parts
+                        if response.server_content and response.server_content.model_turn:
+                            for part in response.server_content.model_turn.parts:
+                                if part.inline_data and part.inline_data.data:
+                                    audio_buffer.extend(part.inline_data.data)
+                                    logger.debug(f"Audio chunk: {len(part.inline_data.data)} bytes, buffer={len(audio_buffer)}")
+                                    # Send in 4096-byte chunks (~85ms at 24kHz) for low-latency
+                                    if len(audio_buffer) >= 4096:
+                                        import base64 as b64mod
+                                        await websocket.send_json({
+                                            "type": "audio_output",
+                                            "data": b64mod.b64encode(bytes(audio_buffer)).decode("ascii"),
+                                            "sample_rate": 24000,
+                                        })
+                                        audio_buffer.clear()
+                            await websocket.send_json({"type": "agent_speaking", "value": True})
+
+                        # ── Also check response.data directly (fallback for other models)
+                        elif response.data:
                             audio_buffer.extend(response.data)
-                            # Send in chunks for low-latency playback
                             if len(audio_buffer) >= 4096:
+                                import base64 as b64mod
                                 await websocket.send_json({
                                     "type": "audio_output",
-                                    "data": list(audio_buffer),
+                                    "data": b64mod.b64encode(bytes(audio_buffer)).decode("ascii"),
                                     "sample_rate": 24000,
                                 })
                                 audio_buffer.clear()
                             await websocket.send_json({"type": "agent_speaking", "value": True})
 
-                        # Handle server content (transcriptions, text)
+                        # ── Server content: transcriptions and turn completion
                         if response.server_content:
                             sc = response.server_content
 
-                            # Output transcription
+                            # Output transcription (what agent said)
                             if sc.output_transcription and sc.output_transcription.text:
                                 await websocket.send_json({
                                     "type": "transcript",
@@ -277,16 +329,18 @@ async def websocket_session(
                                     "text": sc.input_transcription.text,
                                 })
 
-                            # Turn complete — flush audio
+                            # Turn complete — flush remaining audio buffer
                             if sc.turn_complete:
                                 if audio_buffer:
+                                    import base64 as b64mod
                                     await websocket.send_json({
                                         "type": "audio_output",
-                                        "data": list(audio_buffer),
+                                        "data": b64mod.b64encode(bytes(audio_buffer)).decode("ascii"),
                                         "sample_rate": 24000,
                                     })
                                     audio_buffer.clear()
                                 await websocket.send_json({"type": "agent_speaking", "value": False})
+                                logger.info(f"Turn complete for session {session_id}")
 
                         # Handle function/tool calls
                         if response.tool_call:

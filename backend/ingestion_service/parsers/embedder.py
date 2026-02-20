@@ -1,6 +1,7 @@
 """
 Vertex AI Embedder — generates semantic embeddings for code nodes.
 Uses textembedding-gecko@003 for high-quality code+text embeddings.
+Falls back gracefully (null embeddings) when no GCP auth is available locally.
 """
 
 import asyncio
@@ -8,23 +9,37 @@ import os
 from typing import List, Optional
 from loguru import logger
 
-import vertexai
-from vertexai.language_models import TextEmbeddingModel
-
 from .ast_parser import CodeNode
 
 
 class VertexEmbedder:
     def __init__(self):
-        project = os.getenv("GCP_PROJECT_ID", "gemini-live-api-hackathon")
-        location = os.getenv("GCP_LOCATION", "us-central1")
-        vertexai.init(project=project, location=location)
-        self.model = TextEmbeddingModel.from_pretrained("textembedding-gecko@003")
-        logger.info("VertexEmbedder initialized with textembedding-gecko@003")
+        self.model = None
+        self._available = False
+        try:
+            import vertexai
+            from vertexai.language_models import TextEmbeddingModel
+            project = os.getenv("GCP_PROJECT_ID", "gemini-live-api-hackathon")
+            location = os.getenv("GCP_LOCATION", "us-central1")
+            vertexai.init(project=project, location=location)
+            self.model = TextEmbeddingModel.from_pretrained("textembedding-gecko@003")
+            self._available = True
+            logger.info("VertexEmbedder initialized with textembedding-gecko@003")
+        except Exception as e:
+            logger.warning(f"Vertex AI Embedder not available (will proceed without embeddings): {e}")
 
     async def embed_nodes(self, nodes: List[CodeNode], batch_size: int = 25) -> List[CodeNode]:
-        """Generate embeddings for all code nodes in batches."""
+        """Generate embeddings for all code nodes in batches.
+        Falls back to null embeddings if Vertex AI is not available.
+        """
         total = len(nodes)
+
+        if not self._available or self.model is None:
+            logger.warning(f"Skipping embeddings for {total} nodes (Vertex AI unavailable). Nodes will still be stored without embeddings.")
+            for node in nodes:
+                node.embedding = None
+            return nodes
+
         logger.info(f"Generating embeddings for {total} nodes…")
 
         for i in range(0, total, batch_size):
@@ -39,7 +54,6 @@ class VertexEmbedder:
                     node.embedding = emb
             except Exception as e:
                 logger.error(f"Embedding batch {i//batch_size} error: {e}")
-                # Set None embeddings for failed batch
                 for node in batch:
                     node.embedding = None
 
