@@ -1,0 +1,5 @@
+### Slide 2: Missing Deployment Artifacts
+-   **No Dockerfiles Present**: The repository does not contain a `Dockerfile` or `docker-compose.yml`, indicating that containerization is not explicitly defined within the repository for deployment.
+-   **No CI/CD Configuration**: There are no evident CI/CD pipeline configuration files (e.g., `.github/workflows`, `Jenkinsfile`, `gitlab-ci.yml`) to automate testing, building, or deployment processes.
+-   **No Cloud-Specific Configurations**: The repository lacks cloud provider-specific deployment scripts or configuration files (e.g., AWS CloudFormation, Azure ARM templates, GCP Deployment Manager), suggesting manual or external deployment strategies would be required.
+-   **Absence of Production Server Configurations**: No explicit Nginx, Gunicorn, or other production-grade web server configurations are provided within the repository itself.

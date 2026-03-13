@@ -1,0 +1,19 @@
+### Slide 2: Development and Production Environment Configuration
+- **Development Environment (`config/environments/development.rb`)**:
+    - `config.cache_classes = false`: Enables code reloading on changes.
+    - `config.eager_load = false`: Avoids loading the entire application on boot for faster development starts.
+    - `config.active_storage.service = :local`: Uses local disk for file storage.
+    - `worker_timeout 3600`: Configures Puma worker timeout for development.
+- **Test Environment (`config/environments/test.rb`)**:
+    - `config.cache_classes = true`: Enables caching for consistent test runs.
+    - `config.eager_load = ENV["CI"].present?`: Eager loading can be enabled for CI environments.
+    - `config.active_storage.service = :test`: Uses a temporary local disk for test file storage.
+    - `config.action_mailer.delivery_method = :test`: Emails are collected in an array for testing purposes.
+- **Production Environment (`config/environments/production.rb`)**:
+    - `config.cache_classes = true`: Enables caching for performance.
+    - `config.eager_load = true`: Preloads most of the application for better performance in threaded servers.
+    - `config.assets.compile = false`: Relies on precompiled assets, typically handled by external web servers.
+    - `config.active_storage.service = :local`: Configured for local storage, though commented options exist for S3, GCS, Azure (indicating potential cloud storage deployment).
+    - `config.log_level = :info` and `config.log_tags = [ :request_id ]`: Configures logging for production.
+    - `config.cache_store = :null_store`: Currently set to null, but can be configured for production-grade caching like `:mem_cache_store`.
+- **Secrets Management**: `config/credentials.yml.enc` is present, indicating that sensitive information is stored encrypted and managed through Rails' secure credentials system.

@@ -1,0 +1,4 @@
+### Slide 1: Database Configuration and Models
+- **Database System**: The application uses `MySQL` as its relational database, as specified by the `mysql2` gem in `Gemfile` and the adapter configuration in `config/database.yml`.
+- **Connection Details**: `config/database.yml` defines configurations for `development`, `test`, and `production` environments, including `username`, `password` (environment variable for production), and `host` (`localhost`).
+- **ActiveRecord**: All models (`ApplicationRecord`, `User`, `Trippackage`, `Company`, `Slot`, `Feedback`) inherit from `ActiveRecord::Base`, leveraging Rails' ORM for database interactions.

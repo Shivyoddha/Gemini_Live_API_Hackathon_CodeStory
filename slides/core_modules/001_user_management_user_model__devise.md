@@ -1,0 +1,5 @@
+### Slide 1: User Management (`User` Model & Devise)
+- **`User` Model**: Defined in `app/models/user.rb`, this model is responsible for user authentication and authorization. It `has_many :slots` and `has_many :feedbacks`, indicating that users can book slots and leave feedback.
+- **Devise Integration**: The `User` model integrates with `Devise` for core authentication functionalities, including `:database_authenticatable`, `:registerable`, `:recoverable`, `:rememberable`, and `:validatable` modules.
+- **User Attributes**: The `users` table in `db/schema.rb` includes fields for `email`, `encrypted_password`, `reset_password_token`, `remember_created_at`, `created_at`, `updated_at`, `name`, `homelocation`, and `phoneno`.
+- **Custom Parameters**: `ApplicationController` extends `Devise` to permit additional parameters (`:name`, `:homelocation`, `:phoneno`) during sign-up and `:name` for account updates.

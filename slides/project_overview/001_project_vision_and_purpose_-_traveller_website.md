@@ -1,0 +1,4 @@
+### Slide 1: Project Vision and Purpose - Traveller Website
+- **Purpose**: The repository implements "Traveller", a website designed to make travel planning comfortable, with creative features and well-planned organization.
+- **Goal**: To provide users with tools and information to plan and experience dream trips, connecting them with diverse cultures and the beauty of the planet.
+- **Key Functionality Highlights**: The application enables users to explore destinations, book travel packages, and provide feedback on services. It also includes an administrative interface for managing packages and other entities.

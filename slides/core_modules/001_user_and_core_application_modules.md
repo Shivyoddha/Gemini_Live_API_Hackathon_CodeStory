@@ -1,0 +1,4 @@
+### Slide 1: User and Core Application Modules
+-   **`user` Application**: Manages all user-related functionalities, including registration, login, authentication, and user profile management. This app centralizes user data and access control.
+-   **`home` Application**: Serves as the landing page or dashboard for the application, providing introductory content, navigation, and possibly personalized greetings after login. It acts as the gateway to other travel services.
+-   **Root `traveller` Project**: Acts as the project-level configuration, defining global settings, root URL routing (`urls.py`), and managing overall application behavior. It ties all the individual Django apps together.

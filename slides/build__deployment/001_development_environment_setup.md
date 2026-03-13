@@ -1,0 +1,4 @@
+### Slide 1: Development Environment Setup
+-   **Dependency Management**: Project dependencies are explicitly listed in `requirements.txt`, allowing for easy installation via `pip install -r requirements.txt`. This ensures a consistent development environment.
+-   **Django Development Server**: The application is typically run using Django's built-in development server via `python manage.py runserver`, which is suitable for local development and testing.
+-   **Database Setup**: The use of SQLite 3 simplifies local database setup, requiring no external database server configuration. Migrations are applied using `python manage.py migrate`.

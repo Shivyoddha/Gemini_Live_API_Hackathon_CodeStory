@@ -1,0 +1,4 @@
+### Slide 1: Database Configuration and ORM
+-   **SQLite Database**: The application is configured to use SQLite 3 as its primary database, specified in `traveller/settings.py` under the `DATABASES` setting. This provides a lightweight, file-based database solution suitable for development and small-scale deployments.
+-   **Django ORM**: Leverages Django's Object-Relational Mapper (ORM), allowing Python code to interact with the database using high-level Python objects and methods instead of raw SQL queries.
+-   **Migrations**: Database schema changes are managed through Django's migration system, with `migrations/` directories present in each application. This allows for version control of the database schema.

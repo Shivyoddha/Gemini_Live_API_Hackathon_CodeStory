@@ -1,159 +1,129 @@
-# CodeStory — Real-Time Multimodal Narrative Interface for Codebase Intelligence
+# CodeStory — Live Codebase Walkthrough with Gemini
 
-<p align="center">
-  <img src="docs/architecture.png" alt="CodeStory Architecture" width="800"/>
-</p>
+A **real-time, voice-narrated codebase walkthrough** powered by Google’s **Gemini Live API**. Paste a GitHub repo URL → the pipeline generates documentation and slides → Gemini explains each slide with natural speech. You can interrupt anytime, ask questions, and move through slides with your voice or the UI.
 
-> **Built for the Gemini Live API Hackathon — Creative Story Track**
-
-CodeStory transforms any GitHub repository into a **live, voice-narrated, visually-rich architecture walkthrough** powered by Google's Gemini 2.5 Flash Live API. Paste a repo URL → AI narrates the code → real-time slides and diagrams appear — all while you can interrupt and ask questions.
+Built for the **Gemini Live API Hackathon** (Creative Story track).
 
 ---
 
-## ✨ Features
+## What It Does
 
 | Feature | Description |
 |--------|-------------|
-| 🎙️ **Live Voice Narration** | Gemini 2.5 Flash Live API with native audio (no STT→LLM→TTS lag) |
-| 📊 **Real-Time Slides** | AI generates slides & Mermaid diagrams mid-narration |
-| 🧠 **Spanner Graph RAG** | Multi-hop GQL traversals reveal hidden code relationships |
-| 💬 **Interrupt Anytime** | Barge-in detection — ask a question, the AI pivots instantly |
-| 🎭 **Three Personas** | Architect, Debugger, or Historian narration style |
-| 🔁 **Session Resumption** | 2-hour resumable sessions with context compression |
+| **Live voice narration** | Gemini 2.5 Flash Live API speaks slide content in real time (no separate STT → LLM → TTS). |
+| **Slide-based walkthrough** | Documentation and slides are generated from the repo; the AI explains slide-by-slide. |
+| **Interrupt anytime** | Barge-in: ask a question mid-explanation; the agent answers then continues. |
+| **RAG over docs** | For large codebases, the agent can call `search_documentation` to pull details from ChromaDB. |
+| **Transcript & video** | At the end of a module you can download the Q&A transcript or the screen recording. |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-Browser (Next.js)
-    │   WebSocket (PCM 16kHz audio)
-    ▼
-WebSocket Server (FastAPI, Cloud Run)
-    │   Google GenAI SDK
-    ▼
-Gemini 2.5 Flash Live API ──── Function Calls ──► Reasoning Engine
-    │                                                    │
-    ▼                                                    ▼
-Audio Response (24kHz)                          Spanner Graph (GQL)
-    │                                           Vertex AI Embeddings
-    ▼
-Slide Engine (Next.js) ← render_slide / generate_mermaid_flow tool calls
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Browser (React + Vite)                                                   │
+│  • GitHub URL input → pipeline trigger                                    │
+│  • Dashboard: slides sidebar, slide canvas, chat panel, mic/volume       │
+│  • WebSocket client → ws://localhost:8080                                  │
+│  • Content API (docs/slides, RAG) → http://localhost:8081                 │
+└─────────────────────────────────────────────────────────────────────────┘
+         │                                    │
+         │ WebSocket (audio + client content)  │ HTTP (content, search, jobs)
+         ▼                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Python server (server.py)                                               │
+│  • WebSocket proxy to Gemini Live API (Google auth)                      │
+│  • HTTP server: /content, /search-docs, /run-pipeline, /pipeline-status  │
+│  • SQLite: job tracking for pipeline runs                                │
+│  • ChromaDB: vector search over documentation                            │
+└─────────────────────────────────────────────────────────────────────────┘
+         │
+         │ subprocess
+         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  combined_workflow_sent (pipeline)                                       │
+│  • Clone repo → Agent 1 (blueprint) → Agent 2 (docs) + Agent 3 (slides)  │
+│  • Writes to documentation/ and slides/                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+    Gemini 2.5 Flash Live API (Vertex AI)
 ```
+
+- **Frontend**: React app that connects to the WebSocket proxy, renders slides (markdown), and manages presentation state (explanation vs Q&A, mute/unmute, slide navigation).
+- **Backend**: Single Python process: WebSocket proxy for Gemini Live + HTTP API for content, RAG search, and pipeline job status.
+- **Pipeline**: Optional. Run from the UI (“Run pipeline” with a GitHub URL) or skip in dev mode and load existing `documentation/` and `slides/`.
 
 ---
 
-## 🚀 Quick Start
+## Project Structure
 
-### 1. Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- GCP Project with Spanner, Vertex AI, Cloud Run APIs enabled
-- Service account JSON key
-
-### 2. Clone & Configure
-
-```bash
-git clone https://github.com/Shivyoddha/Gemini_Live_API_Hackathon_CodeStory
-cd Gemini_Live_API_Hackathon_CodeStory
-cp .env.example .env
-# Edit .env with your credentials
-mkdir -p secrets
-# Place your GCP service account JSON at secrets/gcp-key.json
 ```
-
-### 3. Set Up Spanner Graph Schema
-
-```bash
-# Run the schema creation script against your Spanner instance
-gcloud spanner databases ddl update cymbal \
-  --instance=cloud-codestory \
-  --project=gemini-live-api-hackathon \
-  --ddl-file=infrastructure/spanner_schema.sql
-```
-
-### 4. Run with Docker Compose
-
-```bash
-docker-compose up --build
-```
-
-Then open [http://localhost:3000](http://localhost:3000).
-
-### 5. Run Services Individually (Dev Mode)
-
-```bash
-# Terminal 1 — Frontend
-cd frontend && npm install && npm run dev
-
-# Terminal 2 — WebSocket Server
-cd backend/websocket_server
-pip install -r requirements.txt
-uvicorn main:app --port 8000 --reload
-
-# Terminal 3 — Ingestion Service
-cd backend/ingestion_service
-pip install -r requirements.txt
-uvicorn main:app --port 8001 --reload
+├── server.py              # WebSocket proxy + HTTP API (content, RAG, jobs)
+├── requirements.txt       # Python deps (websockets, google-auth, chromadb, …)
+├── package.json           # Frontend (React, Vite, react-markdown, react-icons)
+├── vite.config.js
+├── index.html
+├── src/
+│   ├── App.jsx            # Page state: input → running → dashboard
+│   ├── main.jsx
+│   ├── components/
+│   │   ├── LiveAPIDemo.jsx   # Main UI: connect, slides, chat, presentation flow
+│   │   ├── SlideCanvas.jsx   # Renders a single slide (markdown, 16:9)
+│   │   ├── GitHubInputPage.jsx
+│   │   ├── PipelineProgress.jsx
+│   │   └── …
+│   └── utils/
+│       ├── gemini-api.js     # GeminiLiveAPI, message parsing, tool response
+│       ├── media-utils.js    # AudioStreamer, AudioPlayer (mic, playback, mute)
+│       └── tools.js         # SwitchSlideTool, SearchDocsTool, DownloadContentTool
+├── public/
+│   └── audio-processors/   # Worklets: capture, playback
+├── combined_workflow_sent/ # Doc + slide generation pipeline (Agents 1–3)
+├── documentation/          # Generated or sample .md docs (RAG source)
+├── slides/                 # Generated or sample slides (per module)
+├── README.md               # This file
+└── GETTING_STARTED.md      # Step-by-step run guide
 ```
 
 ---
 
-## 📁 Project Structure
+## Key Components
 
-```
-├── frontend/                    # Next.js 14 app
-│   ├── app/
-│   │   ├── page.tsx            # Landing page
-│   │   └── session/[id]/       # Live session page
-│   └── components/
-│       ├── slide/              # SlideEngine, MermaidViewer
-│       ├── audio/              # AudioInterface
-│       └── ui/                 # TranscriptPanel, IngestionProgress
-├── backend/
-│   ├── websocket_server/       # FastAPI + Gemini Live API bridge
-│   │   ├── main.py            # WebSocket server
-│   │   └── tools/             # slide_tools, spanner_client, session_store
-│   └── ingestion_service/      # Repo ingestion pipeline
-│       ├── main.py            # FastAPI ingestion API
-│       └── parsers/           # ast_parser, embedder, spanner_hydrator
-├── infrastructure/
-│   └── spanner_schema.sql      # Spanner Graph DDL schema
-├── docker-compose.yml
-└── .env
-```
+### `LiveAPIDemo.jsx`
+
+- **Connection**: WebSocket URL (default `ws://localhost:8080`), model, voice, config (proactivity, VAD).
+- **Content**: Fetches `/content` (docs + slides + project name) for system prompt and sidebar.
+- **Presentation**: “Play” on a module → start presentation for that module; state machine: **State A** (explaining slide, mic muted), **State B** (consent/Q&A, mic unmuted after agent finishes), **State C** (pending `switch_slide`). Mute/unmute and “do not call tools during explanation” keep interruptions under control.
+- **Tools**: `switch_slide`, `search_documentation`, `download_content` (transcript/video).
+
+### `server.py`
+
+- **WebSocket**: Proxies to Gemini Live API; uses Google default credentials.
+- **HTTP**: Serves static assets, `GET /content`, `GET /search-docs?q=...`, `POST /run-pipeline`, `GET /pipeline-status/:jobId`. Builds system prompt from loaded docs/slides and project name.
+- **ChromaDB**: Indexes docs/slides; RAG returns top chunks for `search_documentation`.
+
+### Pipeline (`combined_workflow_sent`)
+
+- Clones repo, runs blueprint agent, then doc and slide agents; writes to `documentation/` and `slides/` under the workspace root.
 
 ---
 
-## 🎭 Session Modes
+## Configuration
 
-1. **Architecture Walkthrough** — AI starts from entry points and narrates the entire system
-2. **Flow-Based Explanation** — Trace a specific flow (auth, payment, API request) with sequence diagrams
-3. **Immersive Q&A** — Open conversation with an AI that knows your entire codebase
-
----
-
-## 🔧 GCP Services Used
-
-| Service | Purpose |
-|---------|---------|
-| Gemini 2.5 Flash Live API | Real-time multimodal AI narration |
-| Spanner Graph | Property graph knowledge base (GQL traversals) |
-| Vertex AI Embeddings | Semantic code embeddings (textembedding-gecko@003) |
-| Cloud Run | Serverless compute for all services |
-| Cloud Storage | Raw code and SVG asset storage |
-| Cloud Pub/Sub | Async ingestion event triggers |
-| Secret Manager | Secure credential storage |
+- **Dev mode**: Set `VITE_DEV_SKIP_PIPELINE=true` or run in Vite dev so the app skips GitHub input and goes straight to the dashboard, loading existing `documentation/` and `slides/`.
+- **Gemini**: Use a GCP project with Vertex AI and Gemini Live API enabled; `gcloud auth application-default login` (or a service account) for `server.py`.
+- **Ports**: WebSocket `8080`, HTTP `8081` (content, search, pipeline). Change in `server.py` and in the frontend (`CONTENT_API_URL`, proxy URL, `SEARCH_API_URL`).
 
 ---
 
-## 🏆 Hackathon Track
+## Quick Start
 
-**Creative Story Track** — Gemini Live API Hackathon
-
-CodeStory embodies the "story" metaphor: your codebase is the protagonist, the AI is the narrator, and every session is a unique journey through the architecture.
+See **[GETTING_STARTED.md](./GETTING_STARTED.md)** for step-by-step setup and run instructions.
 
 ---
 
-*Built with ❤️ by Team CodeStory*
+## License
+
+Use and adapt as needed for the hackathon and beyond.

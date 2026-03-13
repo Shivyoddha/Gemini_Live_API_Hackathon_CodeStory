@@ -1,0 +1,5 @@
+### Slide 3: Local Deployment and Setup Scripts
+- **`Procfile.dev` for Local Orchestration**: Orchestrates multiple development processes (web server, JavaScript, and CSS compilers) using `foreman`.
+- **`bin/dev` Script**: Simplifies the local development startup process by ensuring `foreman` is installed and then invoking it with `Procfile.dev`.
+- **`bin/setup` Script**: Provides an automated way to set up or update the development environment. It installs Ruby gems (`bundle install`), prepares the database (`bin/rails db:prepare`), clears old logs and temporary files, and restarts the application server.
+- **Puma Configuration (`config/puma.rb`)**: Configures the Puma web server, setting thread counts based on `RAILS_MAX_THREADS` and `RAILS_MIN_THREADS` environment variables, and specifying the listening `port` and `environment`. It also includes a `pidfile` for process management.

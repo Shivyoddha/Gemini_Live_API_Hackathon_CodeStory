@@ -1,0 +1,4 @@
+### Slide 3: Transactional and Utility Modules
+-   **`payment` Application**: Handles all aspects related to payment processing for bookings across hotels, flights, and trains. This module would contain logic for initiating transactions, managing payment statuses, and potentially integrating with payment gateways.
+-   **`templates` Directory**: Contains all HTML templates for the application, structured to define the user interface and presentation layer. Includes base templates, login/registration forms, and potentially admin-specific templates (`admin_base.html`, `user_base.html`).
+-   **`static` Directory**: Stores all static assets like CSS stylesheets, JavaScript files, and images, which are served directly by the web server to render the frontend effectively.

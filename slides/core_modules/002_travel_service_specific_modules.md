@@ -1,0 +1,4 @@
+### Slide 2: Travel Service Specific Modules
+-   **`hotel` Application**: Dedicated to hotel search, booking, and management functionalities. It handles hotel listings, availability, room types, and booking processes. Evidenced by `hotel/models.py` and `hotel/views.py`.
+-   **`flights` Application**: Manages flight search, booking, and related services. This module would encompass flight schedules, seat availability, and booking transactions. Evidenced by `flights/models.py` and `flights/views.py`.
+-   **`trains` Application**: Focuses on train ticket booking and railway travel management. It covers train routes, schedules, seat reservations, and booking procedures. Evidenced by `trains/models.py` and `trains/views.py`.

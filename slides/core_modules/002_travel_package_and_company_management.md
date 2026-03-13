@@ -1,0 +1,5 @@
+### Slide 2: Travel Package and Company Management
+- **`Trippackage` Model**: Located at `app/models/trippackage.rb`, this model represents individual travel packages. It `has_many :slots` and `belongs_to :company`, linking packages to bookings and the companies offering them.
+- **`Trippackage` Attributes**: The `trippackages` table (`db/schema.rb`) stores `package_name`, `destination`, `departure`, `arrival`, ``budget`, `description`, `travelfrom`, `noofbookings`, `packcountry`, and `company_id`.
+- **`Company` Model**: Defined in `app/models/company.rb`, this model manages travel companies. It `has_many :trippackages` and `has_many :feedbacks`, linking companies to their offerings and customer reviews.
+- **`Company` Attributes**: The `companies` table (`db/schema.rb`) includes `companyname`, `hqlocation`, and `rating`.

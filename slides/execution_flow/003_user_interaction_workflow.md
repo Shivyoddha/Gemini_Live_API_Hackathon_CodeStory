@@ -1,0 +1,5 @@
+### Slide 3: User Interaction Workflow
+- **Authentication**: Users begin by signing in through the `Devise`-managed login page (root route is `devise/sessions#new`). They can also sign up or reset passwords.
+- **Home Dashboard**: Upon successful login, users are redirected to `home_index_path`, which displays a carousel of destinations, a trip search bar, and available travel packages dynamically.
+- **Booking a Package**: From the home page, users can click "Book Package" for a `Trippackage`. This leads to the `new_slot_path` where they confirm booking details.
+- **Viewing Bookings & Feedback**: Users can access "My Slots" (`home_myslots_path`) to see their booked trips. From there, they can "Fill a feedback" for a specific company associated with their booked trip, leading to `new_feedback_path`.

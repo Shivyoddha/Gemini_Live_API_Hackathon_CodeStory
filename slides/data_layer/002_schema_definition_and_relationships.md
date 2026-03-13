@@ -1,0 +1,13 @@
+### Slide 2: Schema Definition and Relationships
+- **Schema (`db/schema.rb`)**: The database schema is versioned and managed by Rails migrations.
+- **`users` Table**: Stores user authentication details (`email`, `encrypted_password`) and profile information (`name`, `homelocation`, `phoneno`).
+- **`companies` Table**: Stores `companyname`, `hqlocation`, and `rating` for travel companies.
+- **`trippackages` Table**: Contains details about travel packages, including `package_name`, `destination`, `departure`, `arrival`, `budget`, `description`, `travelfrom`, `noofbookings`, `packcountry`, and a `company_id` foreign key.
+- **`slots` Table**: Records `bookingtime` for user bookings and includes `user_id` and `trippackage_id` foreign keys, linking bookings to users and specific packages.
+- **`feedbacks` Table**: Captures `rate` and `descr` for user feedback, with `user_id` and `company_id` foreign keys linking feedback to users and companies.
+- **Associations**: Model definitions (`app/models/*.rb`) explicitly define relationships:
+    - `User`: `has_many :slots`, `has_many :feedbacks`
+    - `Trippackage`: `has_many :slots`, `belongs_to :company`
+    - `Company`: `has_many :trippackages`, `has_many :feedbacks`
+    - `Slot`: `belongs_to :user`, `belongs_to :trippackage`
+    - `Feedback`: `belongs_to :user`, `belongs_to :company`

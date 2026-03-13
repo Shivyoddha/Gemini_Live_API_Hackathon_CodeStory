@@ -1,0 +1,5 @@
+### Slide 1: Frontend Asset Compilation
+- **JavaScript Bundling**: The `package.json` file includes a `build` script (`esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=assets`) that uses `esbuild` to compile and bundle JavaScript files from `app/javascript` into `app/assets/builds`.
+- **CSS Pre-processing**: A `build:css` script (`sass ./app/assets/stylesheets/application.bootstrap.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules`) utilizes `sass` to compile Bootstrap-themed SCSS into a single CSS file.
+- **Rails Integration**: `jsbundling-rails` and `cssbundling-rails` gems integrate these modern frontend build tools directly into the Rails asset pipeline, ensuring that compiled assets are served correctly.
+- **Asset Manifest**: `app/assets/config/manifest.js` explicitly links the images and builds directories, along with specific JavaScript (`application.js`) and CSS files (`login.css`, `about.css`), ensuring they are included in the asset compilation process.

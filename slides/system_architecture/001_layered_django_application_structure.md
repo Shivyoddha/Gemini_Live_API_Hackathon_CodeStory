@@ -1,0 +1,4 @@
+### Slide 1: Layered Django Application Structure
+-   **Project Root**: The `traveller` directory at the project root acts as the main Django project configuration, housing `settings.py`, `urls.py`, `wsgi.py`, and `asgi.py`.
+-   **Modular Apps**: Comprises several distinct Django applications, each representing a core service area: `home`, `hotel`, `flights`, `trains`, `payment`, and `user`.
+-   **Standard Django Components**: Each application follows a typical Django app structure, including `models.py` for data definitions, `views.py` for business logic, `urls.py` for routing, `admin.py` for admin site registration, and `migrations/` for database schema changes.

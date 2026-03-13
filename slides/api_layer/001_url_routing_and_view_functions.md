@@ -1,0 +1,4 @@
+### Slide 1: URL Routing and View Functions
+-   **Centralized URL Configuration**: The primary `urls.py` within the root `traveller` project acts as the central entry point for all API routes, including URLs from individual applications.
+-   **Application-Specific URL Patterns**: Each Django app (`home`, `hotel`, `flights`, `trains`, `payment`, `user`) contains its own `urls.py` file, defining specific routes and mapping them to corresponding view functions or class-based views.
+-   **Function-Based Views**: The repository primarily utilizes function-based views (e.g., `hotel_book` in `hotel/views.py`, `user_login` in `user/views.py`) to handle incoming HTTP requests and define the logic for specific endpoints.
