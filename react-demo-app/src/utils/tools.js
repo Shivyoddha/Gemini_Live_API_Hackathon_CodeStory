@@ -234,3 +234,43 @@ export class AddCSSStyleTool extends FunctionCallDefinition {
     );
   }
 }
+
+/**
+ * Show Dynamic Slide Tool
+ * Called by Gemini to render a temporary, generated slide in the Q&A view.
+ * Use when the user's question is not covered by any existing module slide.
+ * Supports rich markdown: headings, lists, code blocks, and ```mermaid diagrams.
+ */
+export class ShowDynamicSlideTool extends FunctionCallDefinition {
+  constructor(onShow) {
+    super(
+      "show_dynamic_slide",
+      "Render a temporary slide to visually explain a concept, show a code snippet, or draw a flowchart. " +
+        "Use this when the user asks a question that is not covered by an existing module slide. " +
+        "The slide content is markdown — use triple-backtick mermaid blocks for flowcharts/diagrams " +
+        "and triple-backtick code blocks for code samples.",
+      {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Short heading for the dynamic slide (e.g. 'How authentication works')",
+          },
+          content: {
+            type: "string",
+            description:
+              "Full markdown body for the slide. May include headings, bullet lists, " +
+              "fenced code blocks, and mermaid diagram blocks.",
+          },
+        },
+      },
+      ["title", "content"]
+    );
+    this.onShow = onShow;
+  }
+
+  functionToCall({ title, content }) {
+    console.log(`[ShowDynamicSlideTool] Rendering dynamic slide: "${title}"`);
+    if (this.onShow) this.onShow(title, content);
+  }
+}

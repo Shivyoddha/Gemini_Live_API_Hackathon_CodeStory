@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { BsMicFill, BsMicMuteFill, BsVolumeUpFill, BsDisplay, BsFileText } from "react-icons/bs";
+import { BsMicFill, BsMicMuteFill, BsVolumeUpFill, BsDisplay, BsFileText, BsChatDots } from "react-icons/bs";
 import { GeminiLiveAPI, MultimodalLiveResponseType } from "../utils/gemini-api";
 import {
   AudioStreamer,
@@ -9,7 +9,7 @@ import {
   ScreenCapture,
   AudioPlayer,
 } from "../utils/media-utils";
-import { ShowAlertTool, AddCSSStyleTool, SwitchSlideTool, SearchDocsTool, DownloadContentTool } from "../utils/tools";
+import { ShowAlertTool, AddCSSStyleTool, SwitchSlideTool, SearchDocsTool, DownloadContentTool, ShowDynamicSlideTool } from "../utils/tools";
 import SlideCanvas from "./SlideCanvas";
 import "./LiveAPIDemo.css";
 
@@ -182,12 +182,15 @@ const LiveAPIDemo = () => {
   // Walkthrough Content + Slide State
   const [walkthroughContent, setWalkthroughContent] = useState(null);
   const [activeModule, setActiveModule] = useState(null);
-  // Documentation view: when 'doc', main area shows full docs (with Mermaid diagrams)
+  // Main view: "slide" | "doc" | "qa"
   const [mainView, setMainView] = useState("slide");
   const [docViewTitle, setDocViewTitle] = useState("");
   const [docViewContent, setDocViewContent] = useState("");
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [contentStatus, setContentStatus] = useState("idle"); // "idle" | "loading" | "loaded" | "error"
+
+  // Dynamic Q&A slide — set by Gemini's show_dynamic_slide tool; null = placeholder
+  const [dynamicSlide, setDynamicSlide] = useState(null); // { title, content }
 
   // Presentation Mode State
   const [presentationActive, setPresentationActive] = useState(false);
@@ -209,6 +212,9 @@ const LiveAPIDemo = () => {
   const activeSlideIndexRef = useRef(0);
   const walkthroughContentRef = useRef(null);
   const activeModuleRef = useRef(null);
+  // Q&A view refs — track current view and where to return after switch_slide
+  const mainViewRef = useRef("slide");   // always mirrors mainView
+  const prevViewRef = useRef("slide");   // remembers view before switch_slide navigated away
   const sessionTimerRef = useRef(null);
   const renderIntervalRef = useRef(null);
   const recordCanvasRef = useRef(null);
@@ -255,6 +261,7 @@ const LiveAPIDemo = () => {
   useEffect(() => { activeSlideIndexRef.current = activeSlideIndex; }, [activeSlideIndex]);
   useEffect(() => { walkthroughContentRef.current = walkthroughContent; }, [walkthroughContent]);
   useEffect(() => { activeModuleRef.current = activeModule; }, [activeModule]);
+  useEffect(() => { mainViewRef.current = mainView; }, [mainView]);
 
   // Doc view: custom Markdown components so ```mermaid blocks render as diagrams
   const docMarkdownComponents = useMemo(() => ({
@@ -484,6 +491,13 @@ const LiveAPIDemo = () => {
             }
           }
         }
+
+        // After the agent finishes a turn: if switch_slide was called from the Q&A view,
+        // auto-return to it now that the explanation is complete.
+        if (prevViewRef.current === "qa") {
+          prevViewRef.current = "slide"; // reset so subsequent turns don't trigger again
+          setMainView("qa");
+        }
         break;
 
       case MultimodalLiveResponseType.INTERRUPTED:
@@ -595,8 +609,11 @@ const LiveAPIDemo = () => {
 You have complete knowledge of the project's documentation and slide content below. \
 Use this knowledge to answer any questions the user asks about the project.
 
-When a specific slide is directly relevant to your answer, call the switch_slide tool to navigate \
-to it so the user can see the visual content. Only call switch_slide when genuinely helpful.
+When a user asks a question:
+- If an existing slide is directly relevant, call switch_slide to navigate to it so the user can see the visual content. After you have finished explaining, the UI will automatically return to the Q&A view.
+- If no existing slide covers the question, call show_dynamic_slide with a clear title and rich markdown content. Use triple-backtick mermaid blocks for diagrams and triple-backtick code blocks for code snippets.
+- You may call show_dynamic_slide multiple times in a session to update the dynamic slide as the conversation evolves.
+- Do not call show_dynamic_slide when switch_slide is sufficient.
 
 When you need detailed information beyond these summaries, call the search_documentation tool \
 with a precise query — it will return the most relevant chunks from the full documentation.
@@ -673,6 +690,8 @@ Rules:
 
         // Register switch_slide tool — Gemini will call this to navigate slides
         const switchSlideTool = new SwitchSlideTool((moduleName, slideNumber) => {
+          // Remember where we came from so we can auto-return after explanation
+          prevViewRef.current = mainViewRef.current;
           // Navigate to the requested module + slide
           setActiveModule(moduleName);
           const slidesInModule = (contentData?.slides || []).filter(
@@ -683,9 +702,18 @@ Rules:
             slidesInModule.length - 1
           );
           setActiveSlideIndex(clampedIdx);
+          setMainView("slide");
           addMessage(`[Navigated to: ${moduleName} — slide ${slideNumber}]`, "system");
         });
         clientRef.current.addFunction(switchSlideTool);
+
+        // Register show_dynamic_slide tool — Gemini generates a temporary Q&A slide
+        const dynamicSlideTool = new ShowDynamicSlideTool((title, content) => {
+          setDynamicSlide({ title, content });
+          setMainView("qa");
+          addMessage(`[Dynamic slide: "${title}"]`, "system");
+        });
+        clientRef.current.addFunction(dynamicSlideTool);
 
         // Register search_documentation tool for large-codebase RAG retrieval
         const searchDocsTool = new SearchDocsTool((query, chunks) => {
@@ -1492,6 +1520,19 @@ Rules:
             </div>
           )}
 
+          {/* Ask a Question — dynamic Q&A slide entry */}
+          <div className="sidebar-qa-entry">
+            <button
+              type="button"
+              className={`sidebar-qa-btn${mainView === "qa" ? " sidebar-qa-btn--active" : ""}`}
+              onClick={() => setMainView("qa")}
+              title="Open dynamic Q&A slide"
+            >
+              <BsChatDots size={15} />
+              <span>Ask a Question</span>
+            </button>
+          </div>
+
           {/* debug status at the bottom of sidebar */}
           <div className="sidebar-debug">{debugInfo}</div>
         </aside>
@@ -1513,6 +1554,77 @@ Rules:
                   </ReactMarkdown>
                 </div>
               </div>
+              <SlideControlBar
+                audioStreaming={audioStreaming} toggleAudio={toggleAudio}
+                screenSharing={screenSharing} toggleScreen={toggleScreen}
+                volume={volume} handleVolumeChange={handleVolumeChange}
+                showVolumeSlider={showVolumeSlider} setShowVolumeSlider={setShowVolumeSlider}
+              />
+            </>
+          ) : mainView === "qa" ? (
+            <>
+              {/* top bar — mirrors slide-topbar */}
+              <div className="slide-topbar">
+                <button
+                  type="button"
+                  className="slide-nav-btn"
+                  onClick={() => { setMainView("slide"); setDynamicSlide(null); }}
+                >
+                  ← Back to slides
+                </button>
+                <span className="slide-nav-info" style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
+                  {dynamicSlide ? dynamicSlide.title : "Q&A Slide"}
+                </span>
+                {dynamicSlide && (
+                  <button
+                    type="button"
+                    className="slide-nav-btn"
+                    style={{ color: "#DC2626", borderColor: "#FECACA" }}
+                    onClick={() => setDynamicSlide(null)}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* slide stage — same framing as regular slides */}
+              <div className="slide-canvas-wrap">
+                <div className={`sc-stage qa-sc-stage${!dynamicSlide ? " sc-stage--empty" : ""}`}>
+                  {dynamicSlide ? (
+                    <>
+                      <span className="sc-counter">
+                        <span className="sc-counter__num">Q&amp;A</span>
+                        <span className="sc-counter__sep">·</span>
+                        dynamic
+                      </span>
+                      <div className="sc-card qa-sc-card">
+                        <div className="sc-module-label">dynamic slide</div>
+                        <h2 className="sc-title">{dynamicSlide.title}</h2>
+                        <div className="qa-sc-body">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={docMarkdownComponents}>
+                            {dynamicSlide.content}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                      <div className="sc-footer">
+                        <span className="sc-footer__module">Ask a Question</span>
+                        <span className="sc-footer__brand">CodeStory</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sc-empty">
+                      <div className="sc-empty__icon">
+                        <BsChatDots size={40} style={{ opacity: 0.35 }} />
+                      </div>
+                      <p className="sc-empty__title">Ask a Question</p>
+                      <p className="sc-empty__hint">
+                        Speak or type a question. If no module slide covers it, Gemini will generate a visual explanation here.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <SlideControlBar
                 audioStreaming={audioStreaming} toggleAudio={toggleAudio}
                 screenSharing={screenSharing} toggleScreen={toggleScreen}
