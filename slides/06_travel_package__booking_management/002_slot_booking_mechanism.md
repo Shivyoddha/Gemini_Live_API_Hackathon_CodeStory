@@ -1,0 +1,5 @@
+### Slide 2: Slot Booking Mechanism
+- **Slot Model for Bookings**: User bookings are represented by the `Slot` model (`app/models/slot.rb`), which primarily records `bookingtime` and establishes `belongs_to` relationships with both `User` and `Trippackage`, as defined in `db/schema.rb`.
+- **Booking Creation Workflow**: When a user clicks "Book Package" on `home/index.html.erb`, they are directed to `new_slot_path`, where the `SlotsController#new` action prepares a new slot with `current_user` and the selected `Trippackage`.
+- **Slot Parameter Handling**: The `SlotsController#create` method saves new slots, permitting parameters like `:bookingtime`, `:user_id`, and `:trippackage_id` via `slot_params`, associating the booking with the user and package.
+- **User's Booked Slots View**: Users can access their booked slots via the "My Slots" link, which directs to `home_myslots_path(id:current_user.id)`, where the `HomeController#myslots` action fetches and displays all `user.slots` and associated `Trippackage` details.

@@ -1,0 +1,6 @@
+### Slide 2: Inter-Model Relationships
+- **User to Slots (One-to-Many)**: A `User` can have multiple `Slots`, established by `has_many :slots` in `app/models/user.rb` and `belongs_to :user` in `app/models/slot.rb`, with a `user_id` foreign key in the `slots` table in `db/schema.rb`.
+- **User to Feedbacks (One-to-Many)**: A `User` can submit many `Feedbacks`, defined by `has_many :feedbacks` in `app/models/user.rb` and `belongs_to :user` in `app/models/feedback.rb`, with a `user_id` foreign key in the `feedbacks` table.
+- **Company to Trippackages (One-to-Many)**: A `Company` offers many `Trippackages`, set up with `has_many :trippackages` in `app/models/company.rb` and `belongs_to :company` in `app/models/trippackage.rb`, using `company_id` as a foreign key in `trippackages` table.
+- **Company to Feedbacks (One-to-Many)**: Users can provide `Feedback` for a `Company`, configured by `has_many :feedbacks` in `app/models/company.rb` and `belongs_to :company` in `app/models/feedback.rb`, with a `company_id` foreign key in the `feedbacks` table.
+- **Trippackage to Slots (One-to-Many)**: A `Trippackage` can have many `Slots` (bookings), defined by `has_many :slots` in `app/models/trippackage.rb` and `belongs_to :trippackage` in `app/models/slot.rb`, linked by a `trippackage_id` foreign key in `slots` table.

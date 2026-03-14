@@ -1,0 +1,5 @@
+### Slide 2: Dependency Management & Setup Script
+- **Ruby Gem Management with Bundler**: Ruby dependencies are managed using `Bundler`, specified by `Gemfile` (e.g., `gem "rails"`, `gem "devise"`), ensuring consistent gem versions across environments.
+- **Node.js Package Management with Yarn**: Frontend dependencies (e.g., `@hotwired/stimulus`, `bootstrap`, `esbuild`) are managed via `yarn`, declared in `package.json`, which is a common practice for Rails 7 applications using JS bundling.
+- **Automated Setup Script**: The `bin/setup` script provides an automated way to initialize the development environment, including `bundle install` for Ruby gems and `bin/rails db:prepare` for database setup, as demonstrated by its contents.
+- **Database Preparation**: The `bin/rails db:prepare` command within `bin/setup` ensures the database is set up or migrated, critical for getting the application running locally.

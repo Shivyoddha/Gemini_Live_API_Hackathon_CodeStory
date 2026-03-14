@@ -1,0 +1,5 @@
+### Slide 1: Travel Package Lifecycle
+- **Package Model Definition**: Travel packages are defined by the `Trippackage` model (`app/models/trippackage.rb`), which includes attributes such as `package_name`, `destination`, `departure`, `arrival`, `budget`, and `description`, as seen in `db/schema.rb`.
+- **Full CRUD Operations for Packages**: The `TrippackagesController` provides standard CRUD actions (`index`, `show`, `new`, `edit`, `create`, `update`, `destroy`) for managing travel packages, allowing for creation and modification of package details.
+- **Package Listing and Details**: Users can view all available packages on the `home/index.html.erb` page, which iterates through `Trippackage.all` to display package cards, and can navigate to individual package details via `show` actions.
+- **Admin Package Creation**: An administrative user can create new packages through `mainportal/admindashboard.html.erb` via a link to `new_trippackage_path`, allowing for content generation.

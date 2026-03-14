@@ -1,0 +1,5 @@
+### Slide 2: Data Persistence and Frontend Integration
+- **MySQL Database**: Data persistence is handled by a MySQL database, configured in `config/database.yml` with the `mysql2` gem specified in `Gemfile`, ensuring robust data storage.
+- **Hotwire for Interactive UI**: The frontend leverages Hotwire, integrating `turbo-rails` for faster page navigation and `stimulus-rails` for client-side JavaScript enhancements, as seen in `Gemfile` and `app/assets/javascript/application.js`.
+- **Bootstrap for Responsive Design**: `bootstrap` gem (`bootstrap` and `@popperjs/core` in `package.json`) and `bootstrap-icons` are used for responsive design and consistent styling, imported in `app/assets/stylesheets/application.bootstrap.scss`.
+- **Sass for CSS Preprocessing**: `sassc-rails` gem and `sass` Node.js package enable advanced CSS features and maintainability, used to compile `.scss` files into standard CSS, as indicated by `Procfile.dev` and `package.json` scripts.

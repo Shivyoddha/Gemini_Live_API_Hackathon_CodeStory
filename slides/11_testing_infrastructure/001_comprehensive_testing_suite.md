@@ -1,0 +1,5 @@
+### Slide 1: Comprehensive Testing Suite
+- **Rails Testing Framework**: The repository includes a `test/` directory, indicating the use of Rails' built-in testing framework, supported by `require "rails/test_help"` in `test/test_helper.rb`.
+- **Controller Tests**: Specific controller tests, such as `test/controllers/companies_controller_test.rb` and `test/controllers/trippackages_controller_test.rb`, are present, verifying the behavior and logic of application controllers.
+- **Model Tests**: Model tests, like `test/models/company_test.rb` and `test/models/user_test.rb`, exist to ensure the correctness of business logic and data model validations.
+- **Fixtures for Test Data**: The `test/fixtures/` directory contains YAML files (e.g., `companies.yml`, `trippackages.yml`), used to load sample data for tests, ensuring predictable test environments.

@@ -1,0 +1,5 @@
+### Slide 3: Asset Pipeline and Local Orchestration
+- **ESBuild for JavaScript Bundling**: `esbuild` is configured in `package.json` to bundle JavaScript files from `app/javascript/*.*` into `app/assets/builds`, optimizing script delivery.
+- **Sass for CSS Compilation**: The `sass` Node.js package compiles `app/assets/stylesheets/application.bootstrap.scss` into `app/assets/builds/application.css`, supporting modular and theme-based styling.
+- **Foreman for Local Development**: The `bin/dev` script utilizes `foreman` to concurrently run `bin/rails server` for the web application, `yarn build --watch` for JavaScript, and `yarn build:css --watch` for CSS, providing a streamlined local development environment as defined in `Procfile.dev`.
+- **Automated Environment Setup**: The `bin/setup` script automates the installation of dependencies (`bundle install`), database preparation (`bin/rails db:prepare`), and cleanup tasks (`bin/rails log:clear tmp:clear`), ensuring a consistent development setup.

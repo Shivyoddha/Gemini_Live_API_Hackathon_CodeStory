@@ -1,0 +1,5 @@
+### Slide 1: Core Framework and MVC Pattern
+- **Ruby on Rails 7 Foundation**: The application is built on the `rails` gem, specifically version `~> 7.0.4`, as specified in `Gemfile`, providing a robust framework for web development.
+- **MVC Architectural Pattern**: The project adheres to the Model-View-Controller pattern, with `app/models` for data logic, `app/views` for presentation, and `app/controllers` for handling requests and responses.
+- **Modular Application Structure**: Core application logic is encapsulated in `config/application.rb` where `Rails::Application` inherits default configurations and `Bundler.require(*Rails.groups)` loads necessary gems.
+- **Request Lifecycle Management**: `config.ru` and `config/environment.rb` are used by Rack-based servers to load and run the Rails application, defining the entry point for handling web requests.

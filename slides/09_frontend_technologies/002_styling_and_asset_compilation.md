@@ -1,0 +1,5 @@
+### Slide 2: Styling and Asset Compilation
+- **Bootstrap for Component Styling**: The `bootstrap` Node.js package (`bootstrap` in `package.json`) is imported and used for responsive UI components and base styling, as seen in `app/assets/stylesheets/application.bootstrap.scss`.
+- **Bootstrap Icons**: `bootstrap-icons` (`bootstrap-icons` in `package.json`) are included for scalable vector graphics, further enhancing the visual appeal, and its font path is added to `config.assets.paths` in `config/initializers/assets.rb`.
+- **Sass for CSS Preprocessing**: `sass` (`sass` in `package.json` and `sassc-rails` in `Gemfile`) is used for CSS compilation, allowing for variables, nesting, and mixins, as exemplified by `app/assets/stylesheets/application.bootstrap.scss`.
+- **Asset Build Scripts**: `package.json` defines `build` and `build:css` scripts, which use `esbuild` for JavaScript bundling into `app/assets/builds` and `sass` for CSS compilation into `app/assets/builds/application.css`, respectively.

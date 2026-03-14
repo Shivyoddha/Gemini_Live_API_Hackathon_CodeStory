@@ -1,0 +1,5 @@
+### Slide 1: Application Purpose and Core Functionality
+- **Travel Planning Platform**: The Traveller repository provides a Ruby on Rails web application designed to simplify travel planning, as indicated by the `README.md` description: "The Traveller website makes your travel plans comfortable with its creative features and well-planned organisation."
+- **Discovery and Booking**: Users can explore available travel packages and book them, demonstrated by the `TrippackagesController` and `SlotsController` for managing these entities, and the `home/index.html.erb` view which lists packages and provides a "Book Package" link.
+- **Feedback Mechanism**: The platform allows users to provide feedback on travel companies, evident from the existence of `FeedbacksController` and the `app/models/feedback.rb` model, with a "Fill a feedback" link present in `home/myslots.html.erb`.
+- **User Authentication**: Secure user access is managed through Devise, providing functionalities like sign-up, login, and profile management, as seen in `app/models/user.rb` and `config/routes.rb` with `devise_for :users`.

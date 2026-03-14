@@ -1,0 +1,11 @@
+# Google Agent Development Kit
+google-adk
+
+# Gemini / Generative AI SDKs
+google-genai
+
+# Notebook-style Markdown rendering (used in common.py)
+ipython
+
+# Load environment variables from .env
+python-dotenv

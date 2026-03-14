@@ -1,0 +1,6 @@
+### Slide 1: Core Entities
+- **User Model**: Represents application users with attributes like `email`, `encrypted_password`, `name`, `homelocation`, and `phoneno`, as defined in `db/schema.rb` and `db/migrate/20230518124418_add_name_to_user.rb`.
+- **Company Model**: Stores information about travel service providers, including `companyname`, `hqlocation`, and `rating`, as seen in `db/schema.rb` and `db/migrate/20230519130455_create_companies.rb`.
+- **Trippackage Model**: Defines available travel packages with details such as `package_name`, `destination`, `departure`, `arrival`, `budget`, and `description`, found in `db/schema.rb` and `db/migrate/20230517075937_create_trippackages.rb`.
+- **Slot Model**: Represents a user's booking of a travel package, primarily tracking `bookingtime`, as shown in `db/schema.rb` and `db/migrate/20230519130754_create_slots.rb`.
+- **Feedback Model**: Captures user reviews for companies, including a numerical `rate` and a textual `descr`, present in `db/schema.rb` and `db/migrate/20230522190331_create_feedbacks.rb`.
