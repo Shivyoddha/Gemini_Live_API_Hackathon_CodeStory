@@ -1,17 +1,26 @@
-# CodeStory — Live Codebase Walkthrough with Gemini
+# CodeStory
 
-A **real-time, voice-narrated codebase walkthrough** powered by Google’s **Gemini Live API**. Paste a GitHub repo URL → the pipeline generates documentation and slides → Gemini explains each slide with natural speech. You can interrupt anytime, ask questions, and move through slides with your voice or the UI.
+**Turn any GitHub repo into an interactive, voice-narrated code walkthrough.**
 
-Built for the **Gemini Live API Hackathon** (Creative Story track).
+CodeStory clones a repository, generates structured documentation and presentation slides, then lets you explore them with a **Gemini Live API**–powered voice assistant. Ask questions, jump between slides, and get answers grounded in your docs—all through natural conversation.
+
+![CodeStory](logo.png)
 
 ---
 
-## What It Does
+## What CodeStory Does
+
+1. **Paste a GitHub URL** — CodeStory clones the repo and runs a pipeline to generate:
+   - **Documentation** — Markdown docs per topic (architecture, APIs, data models, etc.).
+   - **Slides** — Module-based slide decks for each section.
+2. **Dashboard** — Browse modules and slides, open per-module documentation (with Mermaid diagram support).
+3. **Voice assistant** — Connect to Gemini Live; the agent explains slides, answers questions using the docs, and can switch slides or search documentation on demand.
+4. **Transcript & Chat** — See the conversation in the side panel; type follow-up questions or rely on voice.
 
 | Feature | Description |
 |--------|-------------|
-| **Live voice narration** | Gemini 2.5 Flash Live API speaks slide content in real time (no separate STT → LLM → TTS). |
-| **Slide-based walkthrough** | Documentation and slides are generated from the repo; the AI explains slide-by-slide. |
+| **Live voice narration** | Gemini 2.5 Flash Live API speaks slide content in real time. |
+| **Slide-based walkthrough** | Documentation and slides generated from the repo; the AI explains slide-by-slide. |
 | **Interrupt anytime** | Barge-in: ask a question mid-explanation; the agent answers then continues. |
 | **RAG over docs** | For large codebases, the agent can call `search_documentation` to pull details from ChromaDB. |
 | **Transcript & video** | At the end of a module you can download the Q&A transcript or the screen recording. |
@@ -51,79 +60,77 @@ Built for the **Gemini Live API Hackathon** (Creative Story track).
     Gemini 2.5 Flash Live API (Vertex AI)
 ```
 
-- **Frontend**: React app that connects to the WebSocket proxy, renders slides (markdown), and manages presentation state (explanation vs Q&A, mute/unmute, slide navigation).
-- **Backend**: Single Python process: WebSocket proxy for Gemini Live + HTTP API for content, RAG search, and pipeline job status.
-- **Pipeline**: Optional. Run from the UI (“Run pipeline” with a GitHub URL) or skip in dev mode and load existing `documentation/` and `slides/`.
-
----
-
-## Project Structure
-
-```
-├── server.py              # WebSocket proxy + HTTP API (content, RAG, jobs)
-├── requirements.txt       # Python deps (websockets, google-auth, chromadb, …)
-├── package.json           # Frontend (React, Vite, react-markdown, react-icons)
-├── vite.config.js
-├── index.html
-├── src/
-│   ├── App.jsx            # Page state: input → running → dashboard
-│   ├── main.jsx
-│   ├── components/
-│   │   ├── LiveAPIDemo.jsx   # Main UI: connect, slides, chat, presentation flow
-│   │   ├── SlideCanvas.jsx   # Renders a single slide (markdown, 16:9)
-│   │   ├── GitHubInputPage.jsx
-│   │   ├── PipelineProgress.jsx
-│   │   └── …
-│   └── utils/
-│       ├── gemini-api.js     # GeminiLiveAPI, message parsing, tool response
-│       ├── media-utils.js    # AudioStreamer, AudioPlayer (mic, playback, mute)
-│       └── tools.js         # SwitchSlideTool, SearchDocsTool, DownloadContentTool
-├── public/
-│   └── audio-processors/   # Worklets: capture, playback
-├── combined_workflow_sent/ # Doc + slide generation pipeline (Agents 1–3)
-├── documentation/          # Generated or sample .md docs (RAG source)
-├── slides/                 # Generated or sample slides (per module)
-├── README.md               # This file
-└── GETTING_STARTED.md      # Step-by-step run guide
-```
-
----
-
-## Key Components
-
-### `LiveAPIDemo.jsx`
-
-- **Connection**: WebSocket URL (default `ws://localhost:8080`), model, voice, config (proactivity, VAD).
-- **Content**: Fetches `/content` (docs + slides + project name) for system prompt and sidebar.
-- **Presentation**: “Play” on a module → start presentation for that module; state machine: **State A** (explaining slide, mic muted), **State B** (consent/Q&A, mic unmuted after agent finishes), **State C** (pending `switch_slide`). Mute/unmute and “do not call tools during explanation” keep interruptions under control.
-- **Tools**: `switch_slide`, `search_documentation`, `download_content` (transcript/video).
-
-### `server.py`
-
-- **WebSocket**: Proxies to Gemini Live API; uses Google default credentials.
-- **HTTP**: Serves static assets, `GET /content`, `GET /search-docs?q=...`, `POST /run-pipeline`, `GET /pipeline-status/:jobId`. Builds system prompt from loaded docs/slides and project name.
-- **ChromaDB**: Indexes docs/slides; RAG returns top chunks for `search_documentation`.
-
-### Pipeline (`combined_workflow_sent`)
-
-- Clones repo, runs blueprint agent, then doc and slide agents; writes to `documentation/` and `slides/` under the workspace root.
-
----
-
-## Configuration
-
-- **Dev mode**: Set `VITE_DEV_SKIP_PIPELINE=true` or run in Vite dev so the app skips GitHub input and goes straight to the dashboard, loading existing `documentation/` and `slides/`.
-- **Gemini**: Use a GCP project with Vertex AI and Gemini Live API enabled; `gcloud auth application-default login` (or a service account) for `server.py`.
-- **Ports**: WebSocket `8080`, HTTP `8081` (content, search, pipeline). Change in `server.py` and in the frontend (`CONTENT_API_URL`, proxy URL, `SEARCH_API_URL`).
-
 ---
 
 ## Quick Start
 
-See **[GETTING_STARTED.md](./GETTING_STARTED.md)** for step-by-step setup and run instructions.
+**Prerequisites:** Node.js 18+, Python 3.10+, [Google Cloud project](https://console.cloud.google.com/) with Vertex AI / Gemini API enabled.
+
+```bash
+# 1. Clone this repo
+git clone https://github.com/Shivyoddha/Gemini_Live_API_Hackathon_CodeStory.git
+cd Gemini_Live_API_Hackathon_CodeStory
+
+# 2. Backend (from project root)
+python -m venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+pip install -r react-demo-app/requirements.txt
+pip install -r combined_workflow_sent/requirements.txt
+# Optional: pip install chromadb   for doc search
+gcloud auth application-default login
+
+# 3. Start the server (WebSocket proxy + Content API)
+cd react-demo-app && python server.py
+# Leave running. You should see: WebSocket ws://localhost:8080, HTTP http://localhost:8081
+
+# 4. Frontend (new terminal)
+cd react-demo-app
+npm install
+npm run dev
+# Open http://localhost:5173
+```
+
+- **First screen:** Enter a GitHub repo URL (or use **Dev mode** to skip the pipeline and go straight to the dashboard with existing `documentation/` and `slides/`).
+- **Dashboard:** Pick a module, use ▶ to start a voice walkthrough, or 📄 to open that module’s documentation.
+- **Connect:** Click **Connect** in the navbar and allow microphone access to talk to the agent.
+
+---
+
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [Onboarding](readme-docs/01-onboarding.md) | Who CodeStory is for, concepts, and first-run flow. |
+| [Setup](readme-docs/02-setup.md) | Prerequisites, environment, optional ChromaDB, and running server + frontend. |
+| [Architecture](readme-docs/03-architecture.md) | Repo layout, pipeline, Content API, and Gemini Live integration. |
+| [Code reference](readme-docs/04-code-reference.md) | Main components, APIs, and tools (switch_slide, search_docs, download_content). |
+| [Troubleshooting](readme-docs/05-troubleshooting.md) | Common issues, ports, and logs. |
+
+---
+
+## Project layout
+
+```
+├── README.md                 ← You are here
+├── readme-docs/              ← Detailed docs (onboarding, setup, architecture, code, troubleshooting)
+├── react-demo-app/           ← React UI + server (WebSocket proxy, Content API, pipeline launcher)
+├── combined_workflow_sent/   ← Pipeline: clone repo → generate docs + slides
+├── documentation/            ← Generated or hand-written Markdown docs (per module)
+├── slides/                   ← Generated or hand-written slides (per module)
+└── logo.png
+```
+
+---
+
+## Tech stack
+
+- **Frontend:** React 19, Vite 7, react-markdown, Mermaid, react-icons
+- **Backend:** Python 3 (HTTP server + WebSocket proxy), Google Auth, ChromaDB (optional, for doc search)
+- **Voice:** Google Vertex AI Gemini Live API (real-time bidirectional audio)
+- **Pipeline:** Python agents (Gemini) for documentation and slide generation
 
 ---
 
 ## License
 
-Use and adapt as needed for the hackathon and beyond.
+See repository license file.
