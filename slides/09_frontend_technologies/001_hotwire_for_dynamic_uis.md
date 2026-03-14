@@ -1,0 +1,5 @@
+### Slide 1: Hotwire for Dynamic UIs
+- **Turbo for Fast Page Navigation**: The `@hotwired/turbo-rails` dependency in `package.json` and `turbo-rails` gem in `Gemfile` enable Turbo, providing SPA-like experiences with faster page loads by intercepting link clicks and form submissions, and updating parts of the page.
+- **Stimulus for Modest JavaScript**: `@hotwired/stimulus` in `package.json` and `stimulus-rails` gem in `Gemfile` integrate Stimulus, a modest JavaScript framework for adding behavior to HTML with controllers defined in `app/assets/javascript/controllers/`.
+- **Stimulus Controllers**: The `app/assets/javascript/controllers/index.js` file automatically registers Stimulus controllers, such as `HelloController` (`app/assets/javascript/controllers/hello_controller.js`), to add specific functionalities to UI elements.
+- **Entry Point for JavaScript**: `app/assets/javascript/application.js` serves as the primary entry point for frontend JavaScript, importing Turbo, Stimulus controllers, and Bootstrap.

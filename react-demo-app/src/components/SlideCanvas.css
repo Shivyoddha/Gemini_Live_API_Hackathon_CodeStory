@@ -1,0 +1,177 @@
+/* SlideCanvas — presentation slide layout (16:9 stage) */
+
+.sc-stage {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-stage--empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.sc-card {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sc-counter {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.sc-counter__num {
+  font-weight: 600;
+  color: #334155;
+}
+
+.sc-counter__sep {
+  margin: 0 0.25rem;
+  font-weight: 400;
+}
+
+.sc-module-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+.sc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.3;
+}
+
+.sc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sc-item__icon-wrap {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.sc-item__text {
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.sc-check-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #22c55e;
+}
+
+.sc-bold {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.sc-inline-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background: #e2e8f0;
+  border-radius: 4px;
+  color: #1e293b;
+}
+
+.sc-link {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.sc-link:hover {
+  color: #1d4ed8;
+}
+
+.sc-raw {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.sc-raw h1,
+.sc-raw h2,
+.sc-raw h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.sc-empty {
+  text-align: center;
+  padding: 2rem;
+}
+
+.sc-empty__icon {
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.sc-empty__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 0.5rem 0;
+}
+
+.sc-empty__hint {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 320px;
+}
+
+.sc-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.sc-footer__module {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.sc-footer__brand {
+  font-weight: 600;
+  color: #64748b;
+}

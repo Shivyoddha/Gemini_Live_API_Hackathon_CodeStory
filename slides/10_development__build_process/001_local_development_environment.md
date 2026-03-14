@@ -1,0 +1,5 @@
+### Slide 1: Local Development Environment
+- **Foreman for Concurrent Processes**: The `Procfile.dev` orchestrates the local development environment using Foreman (`bin/dev`), running the Rails server, JavaScript builder, and CSS builder simultaneously.
+- **Rails Server Execution**: The `web: unset PORT && bin/rails server` command in `Procfile.dev` starts the Rails application server, typically on port 3000, for handling web requests.
+- **Live Reloading for Frontend**: `yarn build --watch` for JavaScript and `yarn build:css --watch` for CSS, as defined in `Procfile.dev`, ensure that frontend assets are automatically recompiled and updated upon changes, facilitating rapid development.
+- **Development Environment Configuration**: `config/environments/development.rb` specifies development-specific settings, such as `config.cache_classes = false` for code reloading and `config.consider_all_requests_local = true` for full error reports.

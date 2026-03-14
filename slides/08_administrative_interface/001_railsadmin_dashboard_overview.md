@@ -1,0 +1,5 @@
+### Slide 1: RailsAdmin Dashboard Overview
+- **RailsAdmin Gem Integration**: The application uses the `rails_admin` gem, listed in the `Gemfile`, to provide a powerful and configurable administrative interface.
+- **Admin Interface Mounting Point**: The RailsAdmin dashboard is mounted at the `/admin` path in the application's routes (`config/routes.rb`), making it accessible for administrative users.
+- **Dashboard as Central Hub**: The `mainportal_admindashboard_path` (`app/views/mainportal/admindashboard.html.erb`) serves as an entry point for admin tasks, providing links to manage packages and other entities.
+- **Comprehensive Model Management**: RailsAdmin provides full management capabilities (CRUD actions) for all application data models, including `companies`, `trippackages`, `slots`, and `feedbacks`, ensuring complete data control.

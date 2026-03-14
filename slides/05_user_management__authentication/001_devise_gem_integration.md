@@ -1,0 +1,5 @@
+### Slide 1: Devise Gem Integration
+- **Devise for Comprehensive Authentication**: User authentication is managed by the `devise` gem, version specified in `Gemfile`, providing out-of-the-box solutions for user registration, login, and session management.
+- **User Model Configuration**: The `User` model (`app/models/user.rb`) includes `devise :database_authenticatable, :registerable, :recoverable, :rememberable, :validatable` to integrate Devise modules for core functionalities.
+- **Authentication Routes**: Devise automatically generates routes for user authentication, such as `new_user_session_path` for login and `new_user_registration_path` for sign-up, as observed in `config/routes.rb` and `app/views/devise/sessions/new.html.erb`.
+- **Session Management**: After successful login, users are redirected to `home_index_path`, as configured by the `after_sign_in_path_for` method in `app/controllers/application_controller.rb`, ensuring a consistent user flow.

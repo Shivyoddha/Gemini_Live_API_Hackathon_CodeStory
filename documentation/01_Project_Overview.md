@@ -1,0 +1,2 @@
+# Project Overview
+The Traveller repository hosts a Ruby on Rails web application designed to facilitate travel planning, offering creative features and organized travel experiences. It serves as a platform for users to discover, book, and provide feedback on travel packages and companies. The application empowers users to manage their travel slots and allows administrators to oversee and manage all content and user data through a dedicated interface.

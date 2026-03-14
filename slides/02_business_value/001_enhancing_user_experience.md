@@ -1,0 +1,5 @@
+### Slide 1: Enhancing User Experience
+- **Centralized Travel Planning**: The application provides a single platform for users to discover and book travel packages, eliminating the need to visit multiple sites, as implied by the comprehensive `home/index.html.erb` which displays packages and search options.
+- **Simplified Booking Process**: Users can book travel packages directly through the application by creating a "Slot" entry, streamlining the booking process from viewing packages to confirmation via `SlotsController#create`.
+- **Personalized Booking Management**: Users have a dedicated "My Slots" section (`home/myslots.html.erb`) to review their upcoming and past bookings, showing `package_name`, `destination`, and `bookingtime` for each slot.
+- **Transparent Feedback System**: The ability for users to provide feedback and ratings (`app/models/feedback.rb`) for companies fosters trust and helps other users make informed decisions, accessible via `new_feedback_path` from user's slots.

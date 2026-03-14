@@ -1,0 +1,5 @@
+### Slide 1: Company Information Management
+- **Company Model Definition**: Travel companies are represented by the `Company` model (`app/models/company.rb`), storing details like `companyname`, `hqlocation`, and `rating`, as observed in `db/schema.rb`.
+- **Company CRUD Operations**: The `CompaniesController` implements full CRUD (Create, Read, Update, Delete) functionality, enabling administrators to manage company profiles through actions such as `index`, `show`, `new`, `edit`, `create`, `update`, and `destroy`.
+- **Listing Companies**: The `companies_url` (`app/views/companies/index.html.erb`) displays a list of all registered companies, each with a link to view its individual details.
+- **Company Data Parameters**: The `company_params` method in `CompaniesController` ensures that only trusted attributes (`:companyname`, `:hqlocation`, `:rating`) are permitted when creating or updating company records.

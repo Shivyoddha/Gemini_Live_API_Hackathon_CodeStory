@@ -1,0 +1,5 @@
+### Slide 2: Key User Flows
+- **Browsing and Searching Packages**: Users land on `home/index` after login (as defined by `after_sign_in_path_for` in `ApplicationController`) where they can view a carousel of destinations and a search bar for packages.
+- **Booking a Trip**: A user selects a package from `home/index.html.erb`, which leads to `new_slot_path` for booking via `SlotsController`, creating a `Slot` record associating the `current_user` with a `Trippackage`.
+- **Managing Personal Bookings**: Users can view their booked trips on `home/myslots_path`, accessed via a navigation link, which iterates through `current_user.slots` to display details.
+- **Providing Company Feedback**: After booking a trip, users have the option to "Fill a feedback" for the associated company, navigating to `new_feedback_path` where `FeedbacksController` handles the submission of ratings and descriptions.

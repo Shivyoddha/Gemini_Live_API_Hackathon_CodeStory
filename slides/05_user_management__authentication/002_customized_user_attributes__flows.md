@@ -1,0 +1,5 @@
+### Slide 2: Customized User Attributes & Flows
+- **Extended User Attributes**: Beyond standard Devise fields, the `User` model includes custom attributes like `name`, `homelocation`, and `phoneno`, added via `db/migrate/20230518124418_add_name_to_user.rb`.
+- **Permitted Parameters Customization**: The `ApplicationController` overrides `configure_permitted_parameters` to allow these custom attributes during `sign_up` and `account_update` actions, using `devise_parameter_sanitizer.permit`, as defined in `app/controllers/application_controller.rb`.
+- **Devise Mailer Views**: The `app/views/devise/mailer/` directory contains templates for various email notifications, including `confirmation_instructions.html.erb`, `reset_password_instructions.html.erb`, and `password_change.html.erb`, ensuring users receive critical account-related communications.
+- **Password and Registration Views**: Custom views for Devise such as `app/views/devise/registrations/new.html.erb` and `app/views/devise/passwords/new.html.erb` provide forms for user registration and password recovery, integrating custom fields.

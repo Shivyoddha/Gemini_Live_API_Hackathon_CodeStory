@@ -1,0 +1,5 @@
+### Slide 2: System and Integration Testing
+- **System Testing with Capybara**: System tests are implemented using `capybara`, `selenium-webdriver`, and `webdrivers` gems, specified in the `Gemfile` within the `:test` group, enabling robust end-to-end testing of user workflows.
+- **Browser-based Simulation**: `ApplicationSystemTestCase` (`test/application_system_test_case.rb`) is configured to use `selenium` with `chrome` as the browser, allowing tests to simulate real user interactions directly in a browser.
+- **User Interaction Verification**: Tests like `test/system/companies_test.rb` simulate user actions such as "visiting the index", "creating a company", "updating a Company", and "destroying a Company", asserting expected UI changes and success messages.
+- **Parallel Test Execution**: The `test_helper.rb` file configures `parallelize(workers: :number_of_processors, with: :threads)`, enabling faster execution of the test suite by utilizing multiple CPU cores and threads.

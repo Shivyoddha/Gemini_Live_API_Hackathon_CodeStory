@@ -1,0 +1,5 @@
+### Slide 2: User Feedback Submission
+- **Feedback Model for Reviews**: User reviews are captured in the `Feedback` model (`app/models/feedback.rb`), which includes a numerical `rate` (1-5) and a textual `descr`, and `belongs_to` both a `User` and a `Company`, as per `db/schema.rb`.
+- **Feedback Creation Process**: Users initiate feedback submission from their "My Slots" page (`home/myslots.html.erb`) via a "Fill a feedback" button, which directs to `new_feedback_path` with `user_id` and `company_id` parameters.
+- **Association in Controller**: The `FeedbacksController#create` action explicitly associates the new feedback with the `current_user` and the `current_company` (stored in session), ensuring proper data linkage.
+- **Rating and Description Input**: The `app/views/feedbacks/_form.html.erb` partial provides radio buttons for rating (1 to 5) and a text area for the description (`:descr`), enabling users to provide detailed feedback.
