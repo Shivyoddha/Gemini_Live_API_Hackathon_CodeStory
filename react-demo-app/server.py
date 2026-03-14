@@ -620,22 +620,22 @@ async def main():
     Starts both the HTTP content server and the WebSocket proxy server.
     """
     print(f"""
-╔════════════════════════════════════════════════════════════╗
-║     Gemini Live API Proxy Server                          ║
-╠════════════════════════════════════════════════════════════╣
-║                                                            ║
-║  🔌 WebSocket Proxy:  ws://localhost:{WS_PORT:<5}                  ║
-║  📄 Content API:      GET  /content                       ║
-║  🚀 Run Pipeline:     POST /run-pipeline                  ║
-║  📊 Pipeline Status:  GET  /pipeline-status/<id>          ║
-║  🔍 Search Docs:      GET  /search-docs?q=<query>         ║
-║     All HTTP on:      http://localhost:{HTTP_PORT:<5}                 ║
-║                                                            ║
-║  Authentication:                                           ║
-║  • Uses Google Cloud default credentials                  ║
-║  • Run: gcloud auth application-default login             ║
-║                                                            ║
-╚════════════════════════════════════════════════════════════╝
++============================================================+
+|     Gemini Live API Proxy Server                          |
++------------------------------------------------------------+
+|                                                            |
+|  WebSocket Proxy:  ws://localhost:{WS_PORT:<5}                  |
+|  Content API:      GET  /content                           |
+|  Run Pipeline:     POST /run-pipeline                      |
+|  Pipeline Status:  GET  /pipeline-status/<id>              |
+|  Search Docs:      GET  /search-docs?q=<query>             |
+|  All HTTP on:      http://localhost:{HTTP_PORT:<5}                 |
+|                                                            |
+|  Authentication:                                           |
+|  - Uses Google Cloud default credentials                   |
+|  - Run: gcloud auth application-default login              |
+|                                                            |
++============================================================+
 """)
 
     # Start HTTP content server in a daemon thread (stops when main process exits)

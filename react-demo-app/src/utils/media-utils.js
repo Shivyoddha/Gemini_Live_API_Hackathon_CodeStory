@@ -112,6 +112,16 @@ export class AudioStreamer {
     console.log("🛑 Audio streaming stopped");
   }
 
+  mute() {
+    this.isStreaming = false;
+  }
+
+  unmute() {
+    if (this.audioWorklet) {
+      this.isStreaming = true;
+    }
+  }
+
   /**
    * Convert Float32Array to PCM16 Int16Array
    */
@@ -394,6 +404,7 @@ export class AudioPlayer {
     this.isInitialized = false;
     this.volume = 1.0;
     this.sampleRate = 24000; // Gemini outputs at 24kHz
+    this.onDrain = null; // fired once when audio queue empties after playback
   }
 
   /**
@@ -419,6 +430,15 @@ export class AudioPlayer {
         this.audioContext,
         "pcm-processor"
       );
+
+      // Listen for messages from the worklet (e.g. "drained" when queue empties)
+      this.workletNode.port.onmessage = (event) => {
+        if (event.data === "drained" && this.onDrain) {
+          const cb = this.onDrain;
+          this.onDrain = null;
+          cb();
+        }
+      };
 
       // Create gain node for volume control
       this.gainNode = this.audioContext.createGain();
@@ -479,6 +499,7 @@ export class AudioPlayer {
     if (this.workletNode) {
       this.workletNode.port.postMessage("interrupt");
     }
+    this.onDrain = null; // cancel any pending drain callback
   }
 
   /**

@@ -25,6 +25,8 @@ class PCMProcessor extends AudioWorkletProcessor {
     const channel = output[0];
     let outputIndex = 0;
 
+    const hadAudio = this.audioQueue.length > 0;
+
     // Fill the output buffer from the queue
     while (outputIndex < channel.length && this.audioQueue.length > 0) {
       const currentBuffer = this.audioQueue[0];
@@ -49,6 +51,11 @@ class PCMProcessor extends AudioWorkletProcessor {
       } else {
         this.audioQueue.shift();
       }
+    }
+
+    // Notify main thread when queue transitions from non-empty to empty
+    if (hadAudio && this.audioQueue.length === 0) {
+      this.port.postMessage("drained");
     }
 
     // Fill remaining output with silence

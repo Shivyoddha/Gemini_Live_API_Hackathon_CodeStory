@@ -226,6 +226,8 @@ const LiveAPIDemo = () => {
   // Guard 3: counts audio chunks received in the current presentation turn.
   // A real slide explanation produces many chunks; a spurious TURN_COMPLETE produces 0–2.
   const currentTurnAudioCountRef = useRef(0);
+  // Stores the 12-second safety fallback timeout so INTERRUPTED can cancel it
+  const drainFallbackRef = useRef(null);
 
   // Initialize Media Devices
   useEffect(() => {
@@ -335,11 +337,10 @@ const LiveAPIDemo = () => {
         if (audioPlayerRef.current) {
           audioPlayerRef.current.play(message.data);
         }
-        // Model is speaking — clear all guards
         toolCallJustFiredRef.current = false;
         if (presentationActiveRef.current) {
-          presentationInterruptedRef.current = false; // real speech resumed
           currentTurnAudioCountRef.current++;
+          audioStreamerRef.current?.mute(); // prevent echo feedback while Gemini speaks
         }
         break;
       case MultimodalLiveResponseType.INPUT_TRANSCRIPTION:
@@ -424,26 +425,60 @@ const LiveAPIDemo = () => {
 
           if (currentIdx < slidesInModule.length - 1) {
             const nextIdx = currentIdx + 1;
-            setTimeout(() => {
+
+            // Wait for audio playback to fully drain, then open the interrupt window.
+            // A 12-second safety fallback fires in case the drain event never arrives.
+            const startInterruptWindow = () => {
               if (!presentationActiveRef.current) return;
-              setActiveSlideIndex(nextIdx);
-              activeSlideIndexRef.current = nextIdx;
-              currentTurnAudioCountRef.current = 0;
-              const nextSlide = slidesInModule[nextIdx];
-              if (clientRef.current && nextSlide) {
-                const preview = (nextSlide.text || "").split("\n").slice(0, 3).join(" ");
-                clientRef.current.sendTextMessage(
-                  `Please explain slide ${nextIdx + 1} of ${slidesInModule.length}: ${preview}. ` +
-                  `Take your time — be thorough and engaging.`
-                );
-              }
-            }, 4000);
+              // 3-second window: if user spoke (Gemini responded), don't auto-advance
+              setTimeout(() => {
+                if (!presentationActiveRef.current) return;
+                if (presentationInterruptedRef.current || currentTurnAudioCountRef.current > 0) {
+                  presentationInterruptedRef.current = false;
+                  return;
+                }
+                presentationInterruptedRef.current = false;
+                setActiveSlideIndex(nextIdx);
+                activeSlideIndexRef.current = nextIdx;
+                currentTurnAudioCountRef.current = 0;
+                const nextSlide = slidesInModule[nextIdx];
+                if (clientRef.current && nextSlide) {
+                  const preview = (nextSlide.text || "").split("\n").slice(0, 3).join(" ");
+                  clientRef.current.sendTextMessage(
+                    `Please explain slide ${nextIdx + 1} of ${slidesInModule.length}: ${preview}. ` +
+                    `Narrate the slide content and stop immediately after. ` +
+                    `Do NOT add closing remarks, questions, or ask if the user wants to continue. ` +
+                    `IMPORTANT: Do NOT ask to move to the next slide — slide navigation is handled automatically.`
+                  );
+                }
+              }, 3000);
+            };
+
+            drainFallbackRef.current = setTimeout(startInterruptWindow, 12000);
+            if (audioPlayerRef.current) {
+              audioPlayerRef.current.onDrain = () => {
+                clearTimeout(drainFallbackRef.current);
+                drainFallbackRef.current = null;
+                audioStreamerRef.current?.unmute(); // open mic for interrupt window
+                startInterruptWindow();
+              };
+            }
           } else {
-            // All slides done — wrap up
-            setTimeout(() => {
+            // All slides done — wrap up after audio finishes
+            drainFallbackRef.current = setTimeout(() => {
               if (!presentationActiveRef.current) return;
               if (stopPresentationRef.current) stopPresentationRef.current();
-            }, 3000);
+            }, 12000);
+            if (audioPlayerRef.current) {
+              audioPlayerRef.current.onDrain = () => {
+                clearTimeout(drainFallbackRef.current);
+                drainFallbackRef.current = null;
+                setTimeout(() => {
+                  if (!presentationActiveRef.current) return;
+                  if (stopPresentationRef.current) stopPresentationRef.current();
+                }, 2000);
+              };
+            }
           }
         }
         break;
@@ -453,6 +488,11 @@ const LiveAPIDemo = () => {
         if (audioPlayerRef.current) {
           audioPlayerRef.current.interrupt();
         }
+        // Cancel the drainFallback so it doesn't fire a slide advance after user interrupted
+        clearTimeout(drainFallbackRef.current);
+        drainFallbackRef.current = null;
+        // Unmute so user's voice can be heard
+        audioStreamerRef.current?.unmute();
         // Flag so TURN_COMPLETE knows this turn was cut short — don't auto-advance
         if (presentationActiveRef.current) {
           presentationInterruptedRef.current = true;
@@ -999,6 +1039,10 @@ Rules:
       clearInterval(sessionTimerRef.current);
       sessionTimerRef.current = null;
     }
+    clearTimeout(drainFallbackRef.current);
+    drainFallbackRef.current = null;
+    if (audioPlayerRef.current) audioPlayerRef.current.onDrain = null;
+    audioStreamerRef.current?.unmute();
     stopRecording();
     addMessage("[Presentation ended]", "system");
 
@@ -1057,8 +1101,10 @@ Rules:
     clientRef.current.sendTextMessage(
       `You are now presenting the "${moduleName.replace(/_/g, " ")}" module (${slidesInModule.length} slides total). ` +
       `IMPORTANT: Do NOT call switch_slide — slide navigation is handled automatically. ` +
+      `Do NOT ask to move to the next slide — that is handled automatically. ` +
+      `After explaining each slide, stop speaking immediately. Do NOT add closing remarks, questions, or ask if the user wants to continue. ` +
       `Please explain slide 1 of ${slidesInModule.length}: ${preview}. ` +
-      `Take your time, be engaging and thorough. Cover all the key points on the slide.`
+      `Be engaging and thorough. Cover all the key points on the slide.`
     );
   }, [connected, startRecording]); // addMessage and clientRef are stable
 
