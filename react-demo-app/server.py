@@ -415,7 +415,7 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
 def start_http_server():
     """Start the HTTP content server in a background thread."""
     server = HTTPServer(("0.0.0.0", HTTP_PORT), ContentRequestHandler)
-    print(f"📄 Content API running on http://localhost:{HTTP_PORT}")
+    print(f"Content API running on http://localhost:{HTTP_PORT}")
 
     # Auto-index on startup if content exists and ChromaDB is empty (dev mode convenience)
     def _auto_index():
@@ -508,7 +508,7 @@ async def create_proxy(
             additional_headers=headers,
             ssl=ssl_context
         ) as server_websocket:
-            print(f"✅ Connected to Gemini API")
+            print("Connected to Gemini API")
 
             # Create bidirectional proxy tasks
             client_to_server_task = asyncio.create_task(
@@ -545,12 +545,16 @@ async def create_proxy(
 
     except ConnectionClosed as e:
         print(f"Server connection closed unexpectedly: {e.code} - {e.reason}")
-        if not client_websocket.closed:
+        try:
             await client_websocket.close(code=e.code, reason=e.reason)
+        except Exception:
+            pass
     except Exception as e:
         print(f"Failed to connect to Gemini API: {e}")
-        if not client_websocket.closed:
+        try:
             await client_websocket.close(code=1008, reason="Upstream connection failed")
+        except Exception:
+            pass
 
 
 async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> None:
@@ -563,7 +567,7 @@ async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> 
     Args:
         client_websocket: The WebSocket connection of the client.
     """
-    print("🔌 New WebSocket client connection...")
+    print("New WebSocket client connection...")
     try:
         # Wait for the first message from the client
         service_setup_message = await asyncio.wait_for(
@@ -576,18 +580,18 @@ async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> 
 
         # If no bearer token provided, generate one using default credentials
         if not bearer_token:
-            print("🔑 Generating access token using default credentials...")
+            print("Generating access token using default credentials...")
             bearer_token = generate_access_token()
             if not bearer_token:
-                print("❌ Failed to generate access token")
+                print("Failed to generate access token")
                 await client_websocket.close(
                     code=1008, reason="Authentication failed"
                 )
                 return
-            print("✅ Access token generated")
+            print("Access token generated")
 
         if not service_url:
-            print("❌ Error: Service URL is missing")
+            print("Error: Service URL is missing")
             await client_websocket.close(
                 code=1008, reason="Service URL is required"
             )
@@ -596,21 +600,23 @@ async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> 
         await create_proxy(client_websocket, bearer_token, service_url)
 
     except asyncio.TimeoutError:
-        print("⏱️ Timeout waiting for the first message from the client")
+        print("Timeout waiting for the first message from the client")
         await client_websocket.close(code=1008, reason="Timeout")
     except json.JSONDecodeError as e:
-        print(f"❌ Invalid JSON in first message: {e}")
+        print(f"Invalid JSON in first message: {e}")
         await client_websocket.close(code=1008, reason="Invalid JSON")
     except Exception as e:
-        print(f"❌ Error handling client: {e}")
-        if not client_websocket.closed:
+        print(f"Error handling client: {e}")
+        try:
             await client_websocket.close(code=1011, reason="Internal error")
+        except Exception:
+            pass
 
 
 async def start_websocket_server():
     """Start the WebSocket proxy server."""
     async with websockets.serve(handle_websocket_client, "0.0.0.0", WS_PORT):
-        print(f"🔌 WebSocket proxy running on ws://localhost:{WS_PORT}")
+        print(f"WebSocket proxy running on ws://localhost:{WS_PORT}")
         # Run forever
         await asyncio.Future()
 
@@ -649,4 +655,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 Servers stopped")
+        print("\nServers stopped")

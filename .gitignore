@@ -37,3 +37,6 @@ npm-debug.log*
 # Editor
 .vscode/
 .idea/
+
+# Local docs (draft / notes)
+bug_fixes.md

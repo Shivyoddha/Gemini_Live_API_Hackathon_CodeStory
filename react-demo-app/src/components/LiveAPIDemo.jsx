@@ -228,6 +228,8 @@ const LiveAPIDemo = () => {
   const currentTurnAudioCountRef = useRef(0);
   // Stores the 12-second safety fallback timeout so INTERRUPTED can cancel it
   const drainFallbackRef = useRef(null);
+  // Stores the 3-second interrupt-window timeout so INTERRUPTED can cancel advance to next slide
+  const interruptWindowTimeoutRef = useRef(null);
 
   // Initialize Media Devices
   useEffect(() => {
@@ -340,7 +342,7 @@ const LiveAPIDemo = () => {
         toolCallJustFiredRef.current = false;
         if (presentationActiveRef.current) {
           currentTurnAudioCountRef.current++;
-          audioStreamerRef.current?.mute(); // prevent echo feedback while Gemini speaks
+          // Do not mute during narration — allow user to interrupt anytime (echo handled by AEC)
         }
         break;
       case MultimodalLiveResponseType.INPUT_TRANSCRIPTION:
@@ -431,7 +433,8 @@ const LiveAPIDemo = () => {
             const startInterruptWindow = () => {
               if (!presentationActiveRef.current) return;
               // 3-second window: if user spoke (Gemini responded), don't auto-advance
-              setTimeout(() => {
+              interruptWindowTimeoutRef.current = setTimeout(() => {
+                interruptWindowTimeoutRef.current = null;
                 if (!presentationActiveRef.current) return;
                 if (presentationInterruptedRef.current || currentTurnAudioCountRef.current > 0) {
                   presentationInterruptedRef.current = false;
@@ -488,9 +491,11 @@ const LiveAPIDemo = () => {
         if (audioPlayerRef.current) {
           audioPlayerRef.current.interrupt();
         }
-        // Cancel the drainFallback so it doesn't fire a slide advance after user interrupted
+        // Cancel the drainFallback and 3s interrupt-window timeout so we don't advance to next slide
         clearTimeout(drainFallbackRef.current);
         drainFallbackRef.current = null;
+        clearTimeout(interruptWindowTimeoutRef.current);
+        interruptWindowTimeoutRef.current = null;
         // Unmute so user's voice can be heard
         audioStreamerRef.current?.unmute();
         // Flag so TURN_COMPLETE knows this turn was cut short — don't auto-advance
@@ -1041,6 +1046,8 @@ Rules:
     }
     clearTimeout(drainFallbackRef.current);
     drainFallbackRef.current = null;
+    clearTimeout(interruptWindowTimeoutRef.current);
+    interruptWindowTimeoutRef.current = null;
     if (audioPlayerRef.current) audioPlayerRef.current.onDrain = null;
     audioStreamerRef.current?.unmute();
     stopRecording();
@@ -1092,6 +1099,9 @@ Rules:
 
     // Start recording
     startRecording();
+
+    // Keep mic open so user can interrupt during narration (echo cancellation is enabled in streamer)
+    audioStreamerRef.current?.unmute();
 
     addMessage(`[▶ Presentation started: ${moduleName} — ${slidesInModule.length} slides]`, "system");
 
