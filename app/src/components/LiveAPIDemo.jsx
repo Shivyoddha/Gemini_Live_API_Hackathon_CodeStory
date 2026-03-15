@@ -358,8 +358,9 @@ const LiveAPIDemo = () => {
         return newMessages;
       }
 
-      // Create new message
-      if ((!text || text.trim().length === 0) && !isFinished) return prev;
+      // Create new message — never add a bubble with no visible content (avoids empty boxes from empty transcription chunks)
+      const trimmed = (text != null ? String(text) : "").trim();
+      if (trimmed.length === 0) return prev;
 
       // Mirror new bubble to transcript. If this is assistant and the last entry is assistant with shorter text, replace it (TEXT arrived after OUTPUT_TRANSCRIPTION chunks) to avoid duplicate.
       const isTranscriptType = type === "user" || type === "assistant" || type === "user-transcript";
