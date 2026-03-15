@@ -2,8 +2,16 @@
 
 Scripts to run the app in each of the three flows.
 
-**Windows:** Use the `.bat` files (e.g. `scripts\run-dev.bat`).  
-**Linux / macOS:** Use the `.sh` files (e.g. `./scripts/run-dev.sh`).
+## Platform
+
+| Platform   | Use these      | Example                    |
+|-----------|----------------|----------------------------|
+| **Mac**   | `.sh` scripts  | `./scripts/run-dev.sh`     |
+| **Linux** | `.sh` scripts  | `./scripts/run-dev.sh`     |
+| **Windows** | `.bat` scripts | `scripts\run-dev.bat`    |
+
+- **Mac and Linux:** The `.sh` files run in bash. The `.bat` files do **not** run on Mac or Linux.
+- **Windows:** The `.bat` files run in Command Prompt or PowerShell. The `.sh` files do **not** run natively on Windows (use Git Bash or WSL if you need to run them).
 
 | Script          | Flow   | Pipeline (Agent 1+2) | Backend   | Storage / content source        |
 |-----------------|--------|----------------------|-----------|----------------------------------|
