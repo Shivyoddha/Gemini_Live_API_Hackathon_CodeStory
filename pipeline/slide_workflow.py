@@ -12,8 +12,6 @@ Changes from original:
     contract consumed by the Multimodal Live API narrator layer:
       - Ordered list of sections and slides
       - Slide file paths (relative inside the ZIP)
-      - Speaker script file path per section
-      - Word count of each speaker script (useful for narrator pacing)
   • All slide parsing helpers, ZIP structure, and agent instruction are
     byte-for-byte identical to the original.
 """
@@ -82,6 +80,9 @@ IMPORTANT:
 • Slides must be detailed and presentation-ready.
 • Slides must not be overly short.
 • Each slide should meaningfully cover a subtopic of that section.
+• Each slide MUST contain at least 3 bullet points (or equivalent body content). Do not create slides with only a title.
+• Aim for 50–120 words of bullet/body content per slide for consistent pacing.
+• Do not add a final slide that only repeats the section title with no bullet content.
 
 ======================================================
 OUTPUT FORMAT (STRICT)
@@ -103,33 +104,7 @@ OUTPUT FORMAT (STRICT)
 ### Slide X: <Subtopic>
 ...
 
-# Speaker Scripts
-
-## <Section Title>
-
-Slide 1:
-Detailed explanation for Slide 1 of this section.
-
-Slide 2:
-Detailed explanation for Slide 2 of this section.
-
-## <Next Section Title>
-
-Slide X:
-Explanation for Slide X of this section.
-
-======================================================
-SPEAKER SCRIPT RULES
-======================================================
-
-• Each section must have its own speaker script block.
-• Script must reference slide numbers clearly
-• 120–250 words per slide explanation.
-• Must expand beyond bullet points.
-• Must not hallucinate any technologies or architecture.
-• Every claim must be grounded in repository evidence.
-
-Return ONLY Markdown.
+Return ONLY Markdown. Output begins with # Slides and contains only slides (no speaker scripts).
 """
     )
 
@@ -179,13 +154,10 @@ async def run_repo_slide_agent_with_existing_repo(
 
 
 def extract_slides_and_scripts(markdown_text: str) -> tuple[str, str]:
-    slides_match = re.search(r"# Slides(.*?)# Speaker Scripts", markdown_text, re.DOTALL)
-    script_match = re.search(r"# Speaker Scripts(.*)", markdown_text, re.DOTALL)
-
+    """Extract slides content. Speaker scripts are no longer generated; script_text returns empty."""
+    slides_match = re.search(r"# Slides\s*\n(.*?)(?=\n# Speaker Scripts|\Z)", markdown_text, re.DOTALL)
     slides_text = slides_match.group(1).strip() if slides_match else ""
-    script_text = script_match.group(1).strip() if script_match else ""
-
-    return slides_text, script_text
+    return slides_text, ""
 
 
 def split_sections(text: str) -> list[str]:
@@ -200,6 +172,40 @@ def split_section_scripts(script_text: str) -> list[str]:
     return re.findall(r"(## .+?)(?=\n## |\Z)", script_text, re.DOTALL)
 
 
+def _normalize_section_title(title: str) -> str:
+    """Same normalization as safe_section_name: for matching slide title to section title."""
+    return re.sub(r"[^\w\s-]", "", title.strip()).replace(" ", "_").lower()
+
+
+def _slide_has_minimum_content(
+    slide_block: str,
+    min_bullets: int = 2,
+    min_body_words: int = 15,
+) -> bool:
+    """Return True if the slide has enough body content (bullets or word count)."""
+    lines = slide_block.strip().split("\n")
+    if not lines:
+        return False
+    body_lines = lines[1:]
+    body_text = "\n".join(body_lines).strip()
+    bullet_count = sum(
+        1 for line in body_lines if line.strip().startswith(("- ", "* "))
+    )
+    word_count = len(body_text.split())
+    return bullet_count >= min_bullets or (bullet_count >= 1 and word_count >= min_body_words)
+
+
+def _is_redundant_section_title_slide(
+    slide_title: str,
+    section_title: str,
+    slide_block: str,
+) -> bool:
+    """True if this slide is just the section title repeated with minimal/empty content."""
+    if _normalize_section_title(slide_title) != _normalize_section_title(section_title):
+        return False
+    return not _slide_has_minimum_content(slide_block, min_bullets=2, min_body_words=20)
+
+
 # ---------------------------------------------------------------------------
 # ZIP creation + slide_index.json
 # ---------------------------------------------------------------------------
@@ -210,26 +216,19 @@ def create_presentation_zip(
     output_zip: str = "repository_presentation.zip",
     base_dir: Path | None = None,
 ) -> Path:
-    """Write per-slide .md files and per-section speaker_script.md into a ZIP.
+    """Write per-slide .md files into a ZIP. Speaker scripts are no longer generated.
 
     *base_dir* overrides the default ``presentation_output`` directory so the
     caller can write directly to the workspace-root ``slides/`` folder that
     server.py expects.  Returns the path to the created ZIP file.
     """
-    slides_text, script_text = extract_slides_and_scripts(markdown_text)
+    slides_text, _ = extract_slides_and_scripts(markdown_text)
 
     slide_sections = split_sections(slides_text)
-    script_sections = split_section_scripts(script_text)
 
     if base_dir is None:
         base_dir = Path("presentation_output")
     base_dir.mkdir(parents=True, exist_ok=True)
-
-    script_map: dict[str, str] = {}
-    for script_section in script_sections:
-        title_match = re.search(r"## (.+)", script_section)
-        if title_match:
-            script_map[title_match.group(1).strip()] = script_section.strip()
 
     for section in slide_sections:
         section_title_match = re.search(r"## (.+)", section)
@@ -239,28 +238,30 @@ def create_presentation_zip(
         section_title = section_title_match.group(1).strip()
         safe_section_name = re.sub(r"[^\w\s-]", "", section_title).replace(" ", "_").lower()
 
-        section_dir = base_dir / safe_section_name
-        section_dir.mkdir(parents=True, exist_ok=True)
-
         slide_blocks = split_slides_within_section(section)
-
+        kept_blocks: list[tuple[str, str]] = []
         for slide_block in slide_blocks:
             slide_match = re.search(r"### Slide (\d+): (.+)", slide_block)
             if not slide_match:
                 continue
+            if not _slide_has_minimum_content(slide_block):
+                continue
+            slide_title = slide_match.group(2).strip()
+            if _is_redundant_section_title_slide(slide_title, section_title, slide_block):
+                continue
+            kept_blocks.append((slide_block, slide_title))
 
-            slide_number = slide_match.group(1)
-            slide_title = slide_match.group(2)
+        if not kept_blocks:
+            continue
 
+        section_dir = base_dir / safe_section_name
+        section_dir.mkdir(parents=True, exist_ok=True)
+
+        for new_index, (slide_block, slide_title) in enumerate(kept_blocks, start=1):
             safe_slide_name = re.sub(r"[^\w\s-]", "", slide_title).replace(" ", "_").lower()
-            filename = f"{slide_number.zfill(3)}_{safe_slide_name}.md"
-
+            filename = f"{str(new_index).zfill(3)}_{safe_slide_name}.md"
             with open(section_dir / filename, "w", encoding="utf-8") as f:
                 f.write(slide_block.strip())
-
-        if section_title in script_map:
-            with open(section_dir / "speaker_script.md", "w", encoding="utf-8") as f:
-                f.write(script_map[section_title])
 
     zip_path = Path(output_zip)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -280,9 +281,8 @@ def build_slide_index(
     """Build a machine-readable JSON index of the presentation.
 
     This is the primary artefact consumed by the Multimodal Live API narrator:
-    it knows exactly which file to read for each slide, how long each speaker
-    script is (for pacing), and the ordered section/slide structure needed to
-    resume playback after a voice or text interruption.
+    it knows exactly which file to read for each slide and the ordered
+    section/slide structure needed to resume playback after a voice or text interruption.
 
     Parameters
     ----------
@@ -298,17 +298,9 @@ def build_slide_index(
     -------
     Path to the written index file.
     """
-    slides_text, script_text = extract_slides_and_scripts(markdown_text)
+    slides_text, _ = extract_slides_and_scripts(markdown_text)
 
     slide_sections = split_sections(slides_text)
-    script_sections = split_section_scripts(script_text)
-
-    # Build script map for word-count lookup
-    script_map: dict[str, str] = {}
-    for script_section in script_sections:
-        title_match = re.search(r"## (.+)", script_section)
-        if title_match:
-            script_map[title_match.group(1).strip()] = script_section.strip()
 
     sections_index: list[dict] = []
 
@@ -321,36 +313,41 @@ def build_slide_index(
         safe_section_name = re.sub(r"[^\w\s-]", "", section_title).replace(" ", "_").lower()
 
         slide_blocks = split_slides_within_section(section)
-
-        slides_list: list[dict] = []
+        kept_blocks: list[str] = []
         for slide_block in slide_blocks:
-            slide_match = re.search(r"### Slide (\d+): (.+)", slide_block)
+            if not _slide_has_minimum_content(slide_block):
+                continue
+            slide_match = re.search(r"### Slide \d+: (.+)", slide_block)
             if not slide_match:
                 continue
+            slide_title = slide_match.group(1).strip()
+            if _is_redundant_section_title_slide(slide_title, section_title, slide_block):
+                continue
+            kept_blocks.append(slide_block)
 
-            slide_number = int(slide_match.group(1))
-            slide_title = slide_match.group(2).strip()
+        if not kept_blocks:
+            continue
+
+        slides_list = []
+        for new_index, slide_block in enumerate(kept_blocks, start=1):
+            slide_match = re.search(r"### Slide \d+: (.+)", slide_block)
+            if not slide_match:
+                continue
+            slide_title = slide_match.group(1).strip()
             safe_slide_name = re.sub(r"[^\w\s-]", "", slide_title).replace(" ", "_").lower()
-            filename = f"{str(slide_number).zfill(3)}_{safe_slide_name}.md"
-
+            filename = f"{str(new_index).zfill(3)}_{safe_slide_name}.md"
             slides_list.append(
                 {
-                    "slide_number": slide_number,
+                    "slide_number": new_index,
                     "title": slide_title,
                     "file": f"{safe_section_name}/{filename}",
                 }
             )
 
-        script_content = script_map.get(section_title, "")
-        word_count = len(script_content.split()) if script_content else 0
-        script_file = f"{safe_section_name}/speaker_script.md" if script_content else None
-
         sections_index.append(
             {
                 "section": section_title,
                 "slides": slides_list,
-                "speaker_script_file": script_file,
-                "script_word_count": word_count,
             }
         )
 

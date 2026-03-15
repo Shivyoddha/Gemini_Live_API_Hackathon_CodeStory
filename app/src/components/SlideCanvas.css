@@ -20,10 +20,11 @@
 
 .sc-card {
   flex: 1;
+  min-height: 0;
   padding: 2rem 2.5rem;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .sc-counter {
@@ -65,6 +66,7 @@
   margin: 0;
   padding: 0;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -118,6 +120,8 @@
 
 .sc-raw {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   font-size: 0.95rem;
   line-height: 1.6;
   color: #334155;

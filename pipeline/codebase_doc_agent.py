@@ -13,6 +13,7 @@ Changes from original:
 
 from __future__ import annotations
 
+import json
 import re
 import zipfile
 from pathlib import Path
@@ -80,6 +81,8 @@ You must:
 5. Use structured tables, diagrams, and subheadings inside sections when appropriate.
 6. Do NOT add, rename, or remove sections unless explicitly allowed by the Blueprint.
 7. Do NOT generate placeholder or generic filler text.
+8. Use a level-2 heading (##) for each Blueprint section title so each section can be extracted into a separate file. Include every Blueprint section.
+9. Section titles must match the Blueprint exactly (character-for-character) so they can be extracted and matched to slide modules.
 
 ====================================================================
 🎯 INPUT
@@ -202,6 +205,11 @@ Documentation must be commit-ready as README.md.
 # ---------------------------------------------------------------------------
 
 
+def _section_id_from_title(title: str) -> str:
+    """Same normalization as slide_workflow safe_section_name for doc–section linking."""
+    return re.sub(r"[^\w\s-]", "", title.strip()).replace(" ", "_").lower()
+
+
 def sanitize_filename(name: str) -> str:
     name = name.strip().lower()
     name = re.sub(r"[^\w\s-]", "", name)
@@ -210,8 +218,9 @@ def sanitize_filename(name: str) -> str:
 
 
 def split_markdown_into_sections(markdown_text: str) -> dict[str, str]:
+    """Split markdown by top-level headings (H1 or H2). Each # or ## block becomes one section."""
     sections: dict[str, str] = {}
-    pattern = r"(?=^#\s.+$)"
+    pattern = r"(?=^#{1,2}\s.+)"
     parts = re.split(pattern, markdown_text, flags=re.MULTILINE)
 
     for part in parts:
@@ -219,27 +228,82 @@ def split_markdown_into_sections(markdown_text: str) -> dict[str, str]:
             continue
         lines = part.strip().split("\n")
         title_line = lines[0]
-        if title_line.startswith("# "):
-            section_title = title_line.replace("# ", "").strip()
-            sections[section_title] = part.strip()
+        if title_line.startswith("## "):
+            section_title = title_line.replace("## ", "", 1).strip()
+        elif title_line.startswith("# "):
+            section_title = title_line.replace("# ", "", 1).strip()
+        else:
+            continue
+        sections[section_title] = part.strip()
 
     return sections
+
+
+def _normalize_title_for_match(title: str) -> str:
+    """Normalize a section title for fuzzy matching against blueprint."""
+    return re.sub(r"[^\w\s-]", "", title.strip()).replace(" ", "_").lower()
+
+
+def build_blueprint_driven_docs(
+    markdown_text: str, blueprint: List[Dict]
+) -> List[tuple[str, str, str]]:
+    """Build (filename, section_id, content) for each blueprint section.
+    Uses blueprint as source of truth; matches agent output by exact or normalized title.
+    Missing sections get a placeholder."""
+    sections = split_markdown_into_sections(markdown_text)
+    # Map normalized title -> (original_title, content)
+    by_normalized: dict[str, tuple[str, str]] = {
+        _normalize_title_for_match(t): (t, c) for t, c in sections.items()
+    }
+
+    result: List[tuple[str, str, str]] = []
+    placeholder = (
+        "## Section under construction\n\n"
+        "Insufficient repository evidence for this section. "
+        "It will be populated when more code is available."
+    )
+
+    for idx, bp_section in enumerate(blueprint, start=1):
+        title = (bp_section.get("title") or "").strip()
+        if not title:
+            continue
+        section_id = _section_id_from_title(title)
+        filename = f"{str(idx).zfill(2)}_{section_id}.md"
+
+        # Match agent output: exact first, then normalized
+        content = None
+        if title in sections:
+            content = sections[title]
+        else:
+            norm = _section_id_from_title(title)
+            if norm in by_normalized:
+                _, content = by_normalized[norm]
+
+        if content is None:
+            content = placeholder
+
+        result.append((filename, section_id, content))
+
+    return result
 
 
 def create_zip_from_markdown(
     markdown_text: str,
     output_zip: str = "documentation_sections.zip",
+    blueprint: List[Dict] | None = None,
 ) -> Path:
     temp_dir = Path("temp_md_sections")
     temp_dir.mkdir(exist_ok=True)
 
-    sections = split_markdown_into_sections(markdown_text)
-
-    for idx, (title, content) in enumerate(sections.items(), start=1):
-        filename = f"{str(idx).zfill(2)}_{sanitize_filename(title)}"
-        file_path = temp_dir / filename
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(content)
+    if blueprint:
+        docs_list = build_blueprint_driven_docs(markdown_text, blueprint)
+        for filename, _section_id, content in docs_list:
+            (temp_dir / filename).write_text(content, encoding="utf-8")
+    else:
+        sections = split_markdown_into_sections(markdown_text)
+        for idx, (title, content) in enumerate(sections.items(), start=1):
+            filename = f"{str(idx).zfill(2)}_{sanitize_filename(title)}"
+            (temp_dir / filename).write_text(content, encoding="utf-8")
 
     zip_path = Path(output_zip)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -300,16 +364,23 @@ async def generate_docs_from_blueprint(
         verbose=True,
     )
 
-    zip_path = create_zip_from_markdown(final_output, output_zip=output_zip)
+    zip_path = create_zip_from_markdown(
+        final_output, output_zip=output_zip, blueprint=ctx.blueprint
+    )
 
     # Optionally write individual .md section files so server.py can read them
     if docs_dir is not None:
         docs_dir = Path(docs_dir)
         docs_dir.mkdir(parents=True, exist_ok=True)
-        sections = split_markdown_into_sections(final_output)
-        for idx, (title, content) in enumerate(sections.items(), start=1):
-            filename = f"{str(idx).zfill(2)}_{sanitize_filename(title)}.md"
+        docs_list = build_blueprint_driven_docs(final_output, ctx.blueprint)
+        manifest_sections = []
+        for filename, section_id, content in docs_list:
             (docs_dir / filename).write_text(content, encoding="utf-8")
+            manifest_sections.append({"filename": filename, "section_id": section_id})
+        (docs_dir / "documentation_manifest.json").write_text(
+            json.dumps({"sections": manifest_sections}, indent=2),
+            encoding="utf-8",
+        )
         log("INFO", f"Documentation sections written to {docs_dir}")
 
     # Persist results into shared context

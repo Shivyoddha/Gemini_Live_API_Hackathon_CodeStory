@@ -1,0 +1,10 @@
+## Procurement Workflow Design (Document A & B)
+
+### Slide 1: Document A Workflow
+The core of the procurement process begins with Document A. A Buyer, designated as 'U', initiates this document. The key fields captured are the Equipment ID, commonly prefixed as 'CSE_', the Equipment Name, its Cost, and the Head of Purchase (e.g., 'OPC'). Once created, Document A enters a strict sequential approval workflow: U first forwards it to P, then P to Q, Q to R, and finally R to S. At each approval step, the system automatically captures the date and any remarks entered by the approver. The document progresses through distinct statuses like `draft`, `pending_p_approval`, `pending_q_approval`, `pending_r_approval`, `pending_s_approval`, and finally `approved` or `rejected`.
+
+### Slide 2: Document B Workflow and Auto-Generation
+A key feature of this system is the automated generation of Document B. Once Document A successfully completes its full approval cycle, passing through 'S', the `AutoCreateDocBService` is triggered. This service automatically creates a new Document B instance, pre-populating it with the essential information – Equipment ID, Name, Cost, and Head – directly from the now-approved Document A. Document B also includes a field for 'proceedings' or additional comments. Importantly, Document B then follows an identical sequential approval workflow, being routed through P, Q, R, and S for their respective approvals.
+
+### Slide 3: Status Tracking and Notifications
+Throughout this entire two-document process, meticulous status tracking is maintained. Every action—creation, approval, rejection—updates the document's status and logs the timestamp and remarks associated with the user performing the action. This history is visible to users on their dashboards and within the detailed view of each document. Complementing this tracking, an email notification system keeps all relevant parties informed. Approvers receive alerts when a document awaits their action, while the Buyer is notified of approvals, rejections, and the progression of their documents through the workflow.

@@ -293,14 +293,15 @@ def _upload_session_to_gcs(session_id: str, session_out: str) -> None:
             continue
         for root, _, files in os.walk(base_dir):
             for f in files:
-                if not f.endswith(".md"):
+                if not f.endswith(".md") and f != "documentation_manifest.json":
                     continue
                 path = os.path.join(root, f)
                 rel = os.path.relpath(path, session_out)
                 blob_name = f"{session_id}/{rel}"
                 blob = bucket.blob(blob_name)
+                content_type = "application/json" if f == "documentation_manifest.json" else "text/markdown"
                 with open(path, "rb") as src:
-                    blob.upload_from_file(src, content_type="text/markdown")
+                    blob.upload_from_file(src, content_type=content_type)
     print(f"[GCS] Uploaded session {session_id} to gs://{GCS_BUCKET}/{session_id}/")
 
 
@@ -322,13 +323,23 @@ def load_content(session_id: str | None = None):
     if GCS_BUCKET and session_id and gcs:
         try:
             bucket = gcs.bucket(GCS_BUCKET)
+            doc_manifest_map = {}
+            manifest_blob = bucket.blob(f"{session_id}/documentation/documentation_manifest.json")
+            if manifest_blob.exists():
+                try:
+                    manifest_data = json.loads(manifest_blob.download_as_text(encoding="utf-8"))
+                    for entry in manifest_data.get("sections", []):
+                        doc_manifest_map[entry.get("filename", "")] = entry.get("section_id", "")
+                except Exception as e:
+                    print(f"[GCS] Could not parse documentation_manifest.json: {e}")
             # List and read documentation blobs
             for blob in bucket.list_blobs(prefix=f"{session_id}/documentation/"):
                 if blob.name.endswith(".md"):
                     content = blob.download_as_text(encoding="utf-8")
                     basename = os.path.basename(blob.name)
                     module_key = os.path.splitext(basename)[0].lower().replace("_and_", "__")
-                    docs.append({"filename": basename, "module": module_key, "text": content})
+                    module = doc_manifest_map.get(basename) or module_key
+                    docs.append({"filename": basename, "module": module, "text": content})
             # List and read slides (organized by module subdir: {session_id}/slides/{module}/file.md)
             for blob in bucket.list_blobs(prefix=f"{session_id}/slides/"):
                 if blob.name.endswith(".md"):
@@ -355,18 +366,27 @@ def load_content(session_id: str | None = None):
         dev_docs_dir = DOCS_DIR
         dev_slides_dir = SLIDES_DIR
 
+    doc_manifest_map = {}
+    manifest_path = os.path.join(dev_docs_dir, "documentation_manifest.json")
+    if os.path.isfile(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest_data = json.load(f)
+                for entry in manifest_data.get("sections", []):
+                    doc_manifest_map[entry.get("filename", "")] = entry.get("section_id", "")
+        except Exception as e:
+            print(f"Warning: Could not parse documentation_manifest.json: {e}")
+
     doc_pattern = os.path.join(dev_docs_dir, "*.md")
     for path in sorted(glob.glob(doc_pattern)):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 basename = os.path.basename(path)
-                # Derive module key from filename: lowercase without extension,
-                # normalise "_and_" → "__" to match slide subdirectory naming.
-                # e.g. "04_Data_Model_and_Relationships.md" → "04_data_model__relationships"
                 module_key = os.path.splitext(basename)[0].lower().replace("_and_", "__")
+                module = doc_manifest_map.get(basename) or module_key
                 docs.append({
                     "filename": basename,
-                    "module": module_key,
+                    "module": module,
                     "text": f.read(),
                 })
         except Exception as e:

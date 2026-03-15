@@ -1,0 +1,7 @@
+## User Management and Authentication
+
+### Slide 1: User Roles and Authentication
+The system incorporates a clear role-based access control mechanism to manage user permissions. We have defined distinct roles: 'U' as the Buyer, responsible for initiating documents; 'P', 'Q', 'R', and 'S' as Approvers, who form a sequential approval chain; and an Administrator for system oversight. User authentication is handled via a standard session-based mechanism. For security, all user passwords are securely stored using bcrypt hashing, managed through Rails' `has_secure_password` feature, ensuring that sensitive credential data is never stored in plain text.
+
+### Slide 2: User Management Interface
+To facilitate system administration, a dedicated interface is provided. Accessible to administrators, this section allows for comprehensive management of user accounts. From this interface, administrators can view a consolidated list of all registered users, complete with their assigned roles, display names, and email addresses. Importantly, administrators possess the capability to edit user profiles. This includes updating display names and email addresses, as well as resetting user passwords. The system is pre-populated with default test users (U, P, Q, R, S, and an admin) to streamline initial setup and testing.

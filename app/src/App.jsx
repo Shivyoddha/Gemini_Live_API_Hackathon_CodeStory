@@ -5,12 +5,11 @@ import PipelineProgress from "./components/PipelineProgress";
 import "./App.css";
 
 /**
- * Dev mode: set VITE_DEV_SKIP_PIPELINE=true in .env (or the env is 'development')
- * to skip the GitHub URL input and go straight to the dashboard.
+ * Dev flow only: set VITE_DEV_SKIP_PIPELINE=true to skip the GitHub URL input
+ * and go straight to the dashboard (use existing documentation/ and slides/).
+ * Debug and Prod flows leave this unset or false so the app starts at the GitHub URL step.
  */
-const DEV_MODE =
-  import.meta.env.DEV ||
-  import.meta.env.VITE_DEV_SKIP_PIPELINE === "true";
+const DEV_MODE = import.meta.env.VITE_DEV_SKIP_PIPELINE === "true";
 
 export default function App() {
   // 'input' | 'running' | 'dashboard'
