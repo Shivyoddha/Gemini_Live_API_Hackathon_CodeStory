@@ -1,0 +1,22 @@
+# Exclude from Cloud Build context (gcloud builds submit)
+.git
+.gitignore
+node_modules
+**/node_modules
+dist
+**/dist
+.venv
+venv
+**/__pycache__
+*.pyc
+.env
+.env.*
+*.md
+!README.md
+web/
+*.db
+chroma.db
+.vscode
+.idea
+*.log
+.DS_Store

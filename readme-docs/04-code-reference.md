@@ -4,7 +4,7 @@ Where to find main logic and how the main APIs and tools work.
 
 ---
 
-## Frontend (react-demo-app/src)
+## Frontend (app/src)
 
 ### App.jsx
 
@@ -49,9 +49,9 @@ Where to find main logic and how the main APIs and tools work.
 
 ---
 
-## Backend (react-demo-app/server.py)
+## Backend (app/server.py)
 
-- **Paths:** WORKSPACE_ROOT = parent of react-demo-app; DOCS_DIR = documentation, SLIDES_DIR = slides.
+- **Paths:** WORKSPACE_ROOT = parent of app; DOCS_DIR = documentation, SLIDES_DIR = slides.
 - **load_content()** — Globs docs and slides, assigns each doc a `module` (lowercase, _and_ → __). Returns `{ docs, slides, project_name }`.
 - **GET /content** — Returns load_content() JSON.
 - **POST /run-pipeline** — Body `{ url }`. Subprocess: `main.py --url <url> --choice 3`. Returns `{ jobId }`.
@@ -61,7 +61,7 @@ Where to find main logic and how the main APIs and tools work.
 
 ---
 
-## Pipeline (combined_workflow_sent)
+## Pipeline (pipeline)
 
 - **main.py** — `--url`, `--choice` (1=docs, 2=slides, 3=both). Builds PipelineContext, runs blueprint agent, then doc and/or slide agents. Writes to ../documentation and ../slides.
 - **blueprint_agent.py** — Blueprint from codebase.

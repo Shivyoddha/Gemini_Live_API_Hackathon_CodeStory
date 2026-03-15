@@ -30,8 +30,8 @@ From the **project root**:
 python -m venv .venv
 source .venv/bin/activate   # Linux/macOS; Windows: .venv\Scripts\activate
 
-pip install -r react-demo-app/requirements.txt
-pip install -r combined_workflow_sent/requirements.txt
+pip install -r app/requirements.txt
+pip install -r pipeline/requirements.txt
 ```
 
 **Optional — Doc search (ChromaDB):**  
@@ -46,7 +46,7 @@ gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-For the **pipeline**, add a `.env` at project root (or in `combined_workflow_sent`):
+For the **pipeline**, add a `.env` at project root (or in `pipeline`):
 
 ```
 GEMINI_API_KEY=your_api_key_here
@@ -58,7 +58,7 @@ GEMINI_API_KEY=your_api_key_here
 
 ```bash
 source .venv/bin/activate
-cd react-demo-app
+cd app
 python server.py
 ```
 
@@ -71,7 +71,7 @@ Leave running. You should see WebSocket on port 8080 and HTTP on 8081.
 New terminal:
 
 ```bash
-cd react-demo-app
+cd app
 npm install
 npm run dev
 ```

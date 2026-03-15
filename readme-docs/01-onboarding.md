@@ -21,7 +21,7 @@ CodeStory is not a generic chatbot: it is wired to **your repo’s docs and slid
 When you submit a GitHub URL, CodeStory:
 
 1. Clones the repository.
-2. Runs a **pipeline** (`combined_workflow_sent`) that uses Gemini to:
+2. Runs a **pipeline** (`pipeline`) that uses Gemini to:
    - Analyze the codebase and produce **documentation** (Markdown files in `documentation/`).
    - Generate **slides** (Markdown files in `slides/`, grouped by **module**).
 

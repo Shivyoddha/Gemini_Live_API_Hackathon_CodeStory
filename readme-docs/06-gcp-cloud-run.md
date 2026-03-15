@@ -179,6 +179,7 @@ Cloud Run instances are **stateless**. Pipeline output (generated `documentation
 | **Connect fails / no “Ready!”** | Verify Proxy WebSocket URL is `wss://...` (not `ws://`) and matches the Cloud Run URL; ensure the project ID in the UI is correct. |
 | **Empty content** | Run the pipeline once (paste a repo URL and run); content is ephemeral per instance. |
 | **CORS** | The server does not send restrictive CORS headers; if you host the frontend on another domain and see CORS errors, you may need to configure CORS on the server or put a proxy in front. |
+| **Container failed to start and listen on PORT** | The image uses nginx on `PORT` (8080) and a `/health` endpoint. Ensure the Dockerfile and `app/start.sh` are unchanged. If the service still fails, check Cloud Run logs (link in the error message) for Python or nginx errors; you can deploy with `--no-cpu-throttling` to speed up startup. |
 
 ---
 

@@ -15,12 +15,12 @@ project root
 │   ├── 03-architecture.md       # This file
 │   ├── 04-code-reference.md
 │   └── 05-troubleshooting.md
-├── react-demo-app/              # Frontend + backend server
+├── app/              # Frontend + backend server
 │   ├── server.py                # WebSocket proxy + HTTP Content API
 │   ├── package.json / src/     # React app (Vite)
 │   ├── public/
 │   └── requirements.txt
-├── combined_workflow_sent/      # Pipeline: clone → docs + slides
+├── pipeline/      # Pipeline: clone → docs + slides
 │   ├── main.py                  # Entrypoint
 │   ├── blueprint_agent.py       # Agent 1: blueprint
 │   ├── codebase_doc_agent.py    # Agent 2: documentation
@@ -36,7 +36,7 @@ project root
 └── logo.png
 ```
 
-The server (`react-demo-app/server.py`) assumes it is run from inside `react-demo-app` and that the **workspace root** is the parent directory. So `documentation/` and `slides/` are resolved as `../documentation` and `../slides` relative to the server script.
+The server (`app/server.py`) assumes it is run from inside `app` and that the **workspace root** is the parent directory. So `documentation/` and `slides/` are resolved as `../documentation` and `../slides` relative to the server script.
 
 ---
 
@@ -44,7 +44,7 @@ The server (`react-demo-app/server.py`) assumes it is run from inside `react-dem
 
 1. **User enters GitHub URL** (or uses dev mode).
 2. **Frontend** calls `POST http://localhost:8081/run-pipeline` with `{ "url": "https://github.com/..." }`.
-3. **Server** starts a background job, returns `jobId`, and runs `combined_workflow_sent/main.py` with `--url` and `--choice 3` (both docs and slides).
+3. **Server** starts a background job, returns `jobId`, and runs `pipeline/main.py` with `--url` and `--choice 3` (both docs and slides).
 4. **Pipeline** clones the repo, runs Gemini agents to generate Markdown under `documentation/` and `slides/<module>/`.
 5. **Frontend** polls `GET http://localhost:8081/pipeline-status/<jobId>` until status is `done`, then navigates to the dashboard.
 6. **Dashboard** loads content via `GET http://localhost:8081/content`. Response includes:
@@ -56,15 +56,15 @@ The server (`react-demo-app/server.py`) assumes it is run from inside `react-dem
 
 ---
 
-## Backend server (react-demo-app/server.py)
+## Backend server (app/server.py)
 
 Single process, two parts:
 
 ### HTTP server (port 8081)
 
 - **GET /content** — Reads `documentation/*.md` and `slides/<module>/*.md` from disk, builds a JSON with `docs`, `slides`, and `project_name`. Docs get a `module` field derived from the filename (e.g. `01_Project_Overview.md` → `01_project_overview`; `_and_` → `__` to match slide folder names).
-- **POST /run-pipeline** — Body: `{ "url": "https://github.com/..." }`. Creates a job ID, starts `combined_workflow_sent/main.py` in a subprocess, returns `{ "jobId": "..." }`.
-- **GET /pipeline-status/<id>** — Returns job status from SQLite (`jobs.db` in react-demo-app).
+- **POST /run-pipeline** — Body: `{ "url": "https://github.com/..." }`. Creates a job ID, starts `pipeline/main.py` in a subprocess, returns `{ "jobId": "..." }`.
+- **GET /pipeline-status/<id>** — Returns job status from SQLite (`jobs.db` in app).
 - **GET /search-docs?q=...** — If ChromaDB is installed, queries the vector index and returns top chunks; otherwise returns empty. Used by the `search_documentation` tool.
 
 On startup, if `documentation/` and `slides/` exist and ChromaDB is available, the server can auto-index content into ChromaDB.
@@ -77,7 +77,7 @@ On startup, if `documentation/` and `slides/` exist and ChromaDB is available, t
 
 ---
 
-## Pipeline (combined_workflow_sent)
+## Pipeline (pipeline)
 
 - **Input:** GitHub repo URL (and choice: docs only, slides only, or both).
 - **Steps:**
@@ -90,7 +90,7 @@ On startup, if `documentation/` and `slides/` exist and ChromaDB is available, t
 
 ---
 
-## Frontend (react-demo-app/src)
+## Frontend (app/src)
 
 - **App.jsx** — Top-level routing: `input` (GitHub URL) → `running` (pipeline progress) → `dashboard` (LiveAPIDemo). Dev mode can start at `dashboard`.
 - **GitHubInputPage.jsx** — Form to submit repo URL; calls `POST /run-pipeline` and hands off to PipelineProgress.

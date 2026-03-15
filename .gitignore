@@ -14,8 +14,8 @@ venv/
 # Database / vector store
 *.db
 chroma.db/
-react-demo-app/chroma.db/
-react-demo-app/jobs.db
+app/chroma.db/
+app/jobs.db
 
 # Google Cloud SDK (large binary)
 google-cloud-sdk/

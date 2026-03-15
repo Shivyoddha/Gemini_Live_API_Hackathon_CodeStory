@@ -43,4 +43,5 @@ jobs:
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
             --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }}" \
+            --no-cpu-throttling \
             --quiet

@@ -6,9 +6,9 @@ Common issues and how to fix them.
 
 ## Server won’t start
 
-- **Port in use:** Ensure 8080 and 8081 are free. On Linux: `lsof -i :8080 -i :8081` (or `ss -tlnp`). Kill the process or change `WS_PORT` / `HTTP_PORT` in `react-demo-app/server.py`.
-- **Missing dependencies:** Run `pip install -r react-demo-app/requirements.txt` (and `combined_workflow_sent/requirements.txt` if you run the pipeline). If you use ChromaDB search, `pip install chromadb`.
-- **Python path:** Run `python server.py` from inside `react-demo-app` so that `WORKSPACE_ROOT` is the parent of `react-demo-app`.
+- **Port in use:** Ensure 8080 and 8081 are free. On Linux: `lsof -i :8080 -i :8081` (or `ss -tlnp`). Kill the process or change `WS_PORT` / `HTTP_PORT` in `app/server.py`.
+- **Missing dependencies:** Run `pip install -r app/requirements.txt` (and `pipeline/requirements.txt` if you run the pipeline). If you use ChromaDB search, `pip install chromadb`.
+- **Python path:** Run `python server.py` from inside `app` so that `WORKSPACE_ROOT` is the parent of `app`.
 
 ---
 
@@ -23,7 +23,7 @@ Common issues and how to fix them.
 
 ## Content is empty (no docs or slides)
 
-- **Paths:** The server reads from `WORKSPACE_ROOT/documentation` and `WORKSPACE_ROOT/slides`, where workspace root is the parent of `react-demo-app`. If you run the server from elsewhere, those folders might be wrong. Run from `react-demo-app` and ensure `../documentation` and `../slides` exist and contain `.md` files.
+- **Paths:** The server reads from `WORKSPACE_ROOT/documentation` and `WORKSPACE_ROOT/slides`, where workspace root is the parent of `app`. If you run the server from elsewhere, those folders might be wrong. Run from `app` and ensure `../documentation` and `../slides` exist and contain `.md` files.
 - **Pipeline not run:** If you didn’t run the pipeline (or dev mode with existing content), `documentation/` and `slides/` may be empty. Run the pipeline with a GitHub URL or add Markdown files manually for dev.
 - **API check:** Open `http://localhost:8081/content`. You should see JSON with `docs` and `slides` arrays. If they’re empty, the server isn’t finding the files.
 
@@ -39,9 +39,9 @@ Common issues and how to fix them.
 ## Pipeline fails (clone or agents)
 
 - **Git:** `git` must be on PATH. The pipeline clones into a temp directory under the workspace.
-- **API key:** Pipeline needs `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `.env` (project root or `combined_workflow_sent`). If missing, the pipeline will error early.
+- **API key:** Pipeline needs `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `.env` (project root or `pipeline`). If missing, the pipeline will error early.
 - **Network:** Clone requires access to GitHub (and possibly VPN/proxy for your network). Agent calls need internet access to the Gemini API.
-- **Logs:** Pipeline output is captured by the server and stored with the job; check the running terminal or job status message. Running `python main.py` inside `combined_workflow_sent` gives full tracebacks.
+- **Logs:** Pipeline output is captured by the server and stored with the job; check the running terminal or job status message. Running `python main.py` inside `pipeline` gives full tracebacks.
 
 ---
 
@@ -62,7 +62,7 @@ Common issues and how to fix them.
 
 ## Build / deploy
 
-- **Frontend build:** `cd react-demo-app && npm run build`. Static output is in `dist/`. Point your HTTP server at `dist` and ensure API and WebSocket URLs in the app point to your backend (e.g. set via env or config).
+- **Frontend build:** `cd app && npm run build`. Static output is in `dist/`. Point your HTTP server at `dist` and ensure API and WebSocket URLs in the app point to your backend (e.g. set via env or config).
 - **Backend:** Run `server.py` in a process manager (e.g. systemd, Docker). Expose 8080 (WebSocket) and 8081 (HTTP). Use a reverse proxy (e.g. nginx) for HTTPS and optional path-based routing.
 
 ---
