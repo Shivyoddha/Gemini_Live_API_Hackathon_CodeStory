@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir -r /tmp/app_requirements.txt \
 # Absolute destinations — no WORKDIR ambiguity for Cloud Build cache
 COPY app/server.py  /app/app/server.py
 COPY app/start.sh   /app/app/start.sh
-RUN chmod +x /app/app/start.sh
+# Strip Windows CRLF line endings from the shell script (safe no-op on LF files)
+RUN sed -i 's/\r//' /app/app/start.sh && chmod +x /app/app/start.sh
 
 # ── Pipeline agents ─────────────────────────────────────────────────────────
 COPY pipeline/ /app/pipeline/
