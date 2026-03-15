@@ -776,8 +776,10 @@ Rules:
         clientRef.current.addFunction(dynamicSlideTool);
 
         // Register search_documentation tool for large-codebase RAG retrieval
-        const searchDocsTool = new SearchDocsTool((query, chunks) => {
-          if (chunks.length > 0) {
+        const searchDocsTool = new SearchDocsTool((query, chunks, error) => {
+          if (error) {
+            addMessage(`[Search failed: ${error}]`, "system");
+          } else if (chunks.length > 0) {
             const preview = chunks.map((c) => c.source).join(", ");
             addMessage(`[Docs searched: "${query}" → ${preview}]`, "system");
           }
@@ -1593,6 +1595,13 @@ Rules:
             <div className="sidebar-empty">
               {contentStatus === "loading" ? (
                 <p>Loading content…</p>
+              ) : contentStatus === "error" ? (
+                <p>
+                  Failed to load content.{" "}
+                  <button type="button" className="sidebar-retry" onClick={() => fetchContent()}>
+                    Retry
+                  </button>
+                </p>
               ) : (
                 <p>Connect to load slides</p>
               )}

@@ -253,6 +253,10 @@ export class GeminiLiveAPI {
   onReceiveMessage(messageEvent) {
     // console.log("Message received: ", messageEvent);
     const messageData = JSON.parse(messageEvent.data);
+    if (messageData?.type === MultimodalLiveResponseType.ERROR) {
+      this.onErrorMessage(messageData.message || "Connection error");
+      return;
+    }
     const message = new MultimodalLiveResponseMessage(messageData);
     this.onReceiveResponse(message);
   }

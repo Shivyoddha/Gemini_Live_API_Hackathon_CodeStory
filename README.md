@@ -110,6 +110,7 @@ npm run dev
 | [Code reference](readme-docs/04-code-reference.md) | Main components, APIs, and tools (switch_slide, search_docs, download_content). |
 | [Troubleshooting](readme-docs/05-troubleshooting.md) | Common issues, ports, and logs. |
 | [GCP & Cloud Run](readme-docs/06-gcp-cloud-run.md) | How to deploy the backend to Google Cloud Run and connect the app. |
+| [Error logging](readme-docs/07-error-logging.md) | Error flow, component handling, and where to look for logs. |
 
 ---
 

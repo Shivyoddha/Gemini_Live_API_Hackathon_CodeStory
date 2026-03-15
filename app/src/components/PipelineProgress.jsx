@@ -15,10 +15,13 @@ const STATUS_LABELS = {
 
 const STEPS = ["Clone repo", "Generate docs & slides", "Index content", "Ready"];
 
+const POLL_FAILURE_THRESHOLD = 3; // Stop polling after this many consecutive failures
+
 export default function PipelineProgress({ jobId, repoUrl, onComplete }) {
   const [status, setStatus] = useState("queued");
   const [message, setMessage] = useState("Pipeline queued…");
   const [dots, setDots] = useState(".");
+  const [pollFailures, setPollFailures] = useState(0);
   const timerRef = useRef(null);
   const dotsRef = useRef(null);
 
@@ -34,24 +37,45 @@ export default function PipelineProgress({ jobId, repoUrl, onComplete }) {
     const poll = async () => {
       try {
         const res = await fetch(`${API_BASE}/pipeline-status/${jobId}?session_id=${encodeURIComponent(getSessionId())}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const errMsg = data.error || `HTTP ${res.status}`;
+          setPollFailures((f) => {
+            const next = f + 1;
+            if (next >= POLL_FAILURE_THRESHOLD) {
+              setStatus("error");
+              setMessage(`Could not reach server: ${errMsg}. Check connection and retry.`);
+              clearInterval(timerRef.current);
+            }
+            return next;
+          });
+          return;
+        }
+        setPollFailures(0);
         const data = await res.json();
         setStatus(data.status);
         setMessage(data.message || "");
 
         if (data.status === "done") {
           clearInterval(timerRef.current);
-          // small delay so user sees "Complete!" before transitioning
           setTimeout(() => onComplete(), 1200);
         } else if (data.status === "error") {
           clearInterval(timerRef.current);
         }
       } catch {
-        // server not reachable yet — keep polling
+        setPollFailures((f) => {
+          const next = f + 1;
+          if (next >= POLL_FAILURE_THRESHOLD) {
+            setStatus("error");
+            setMessage("Could not reach server. Check connection and retry.");
+            clearInterval(timerRef.current);
+          }
+          return next;
+        });
       }
     };
 
-    poll(); // immediate first check
+    poll();
     timerRef.current = setInterval(poll, POLL_INTERVAL);
     return () => clearInterval(timerRef.current);
   }, [jobId, onComplete]);
@@ -114,8 +138,23 @@ export default function PipelineProgress({ jobId, repoUrl, onComplete }) {
           })}
         </div>
 
-        {/* live message */}
-        <p className="pp-message">{message}</p>
+        {/* live message — scrollable pre for long error output */}
+        {isError && message && message.length > 100 ? (
+          <div className="pp-error-block">
+            <pre className="pp-error-output">{message}</pre>
+            <button
+              type="button"
+              className="pp-copy-error"
+              onClick={() => {
+                navigator.clipboard?.writeText(message).catch(() => {});
+              }}
+            >
+              Copy error
+            </button>
+          </div>
+        ) : (
+          <p className={`pp-message ${isError ? "pp-message--error" : ""}`}>{message}</p>
+        )}
 
         {isError && (
           <a className="pp-retry" href="/">

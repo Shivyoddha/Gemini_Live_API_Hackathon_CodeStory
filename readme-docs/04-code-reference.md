@@ -39,8 +39,14 @@ Where to find main logic and how the main APIs and tools work.
 ### utils/tools.js
 
 - **SwitchSlideTool(onSwitch)** — Params: `module`, `slide_number`. Calls `onSwitch(moduleName, slideNumber)`.
-- **SearchDocsTool(onResult)** — GET `/search-docs?q=...`, then `onResult(query, chunks)`.
+- **SearchDocsTool(onResult)** — GET `/search-docs?q=...`, then `onResult(query, chunks, error?)`. On fetch failure, passes `(query, [], errorMessage)` so the UI can surface the error.
 - **DownloadContentTool(onDownload)** — Params: `type` = `transcript` | `video`. Calls `onDownload(type)`.
+
+### Error handling
+
+- **Job status:** `GET /pipeline-status/<id>` returns `{ status, message }`. On error, `message` contains the last pipeline output (up to 2000 chars) for debugging.
+- **HTTP errors:** Endpoints return `{ "error": "..." }` with 4xx/5xx status for validation or server failures.
+- **WebSocket:** Before closing on auth/timeout/upstream failure, the proxy sends `{"type":"ERROR","message":"...","code":"..."}` so the client can display the reason. See [Error logging](07-error-logging.md).
 
 ### utils/media-utils.js
 

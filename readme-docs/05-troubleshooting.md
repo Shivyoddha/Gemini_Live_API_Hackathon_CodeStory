@@ -41,7 +41,9 @@ Common issues and how to fix them.
 - **Git:** `git` must be on PATH. The pipeline clones into a temp directory under the workspace.
 - **API key:** Pipeline needs `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `.env` (project root or `pipeline`). If missing, the pipeline will error early.
 - **Network:** Clone requires access to GitHub (and possibly VPN/proxy for your network). Agent calls need internet access to the Gemini API.
-- **Logs:** Pipeline output is captured by the server and stored with the job; check the running terminal or job status message. Running `python main.py` inside `pipeline` gives full tracebacks.
+- **Pipeline error details:** When the pipeline fails, the job status stores the last 50 lines of pipeline output (truncated to 2000 chars). The UI shows this in a scrollable block with a **Copy error** button. Use it to diagnose tracebacks, missing API keys, or git clone failures.
+- **Where to look for logs:** (1) **Local:** Terminal where `server.py` runs — look for `[Pipeline]` and `[Pipeline-ERROR]` lines. (2) **Cloud Run:** Console → Cloud Run → your service → Logs tab. (3) **Browser:** DevTools → Console for WebSocket errors and HTTP failures.
+- **Full error logging guide:** See [Error logging](07-error-logging.md).
 
 ---
 

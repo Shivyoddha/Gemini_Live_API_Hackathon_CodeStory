@@ -32,6 +32,19 @@ import google.auth
 from google.auth.transport.requests import Request
 
 DEBUG = False  # Set to True for verbose logging
+
+# Max pipeline output lines to keep for error reporting; trim message to this many chars for storage
+_PIPELINE_BUFFER_LINES = 50
+_PIPELINE_ERROR_MAX_CHARS = 2000
+
+
+def _log(component: str, level: str, msg: str, **kwargs) -> None:
+    """Structured log helper for Cloud Run visibility. Flushes stdout so logs appear promptly."""
+    extra = " ".join(f"{k}={v}" for k, v in kwargs.items()) if kwargs else ""
+    print(f"[{component}] [{level}] {msg} {extra}".strip())
+    sys.stdout.flush()
+
+
 # Cloud Run sets PORT; in container we use nginx on PORT and Python on internal ports
 WS_PORT = int(os.environ.get("WS_PORT", "8080"))    # WebSocket proxy server
 HTTP_PORT = int(os.environ.get("HTTP_PORT", "8081"))  # HTTP content API server
@@ -202,6 +215,13 @@ def _index_content_into_session_chroma(session_id: str, content: dict) -> None:
         print(f"[ChromaDB] Indexed {len(documents)} chunks for session {session_id}")
 
 
+def index_content_into_chroma(session_id: str) -> None:
+    """Load content for session and index into ChromaDB. Wrapper for _index_content_into_session_chroma."""
+    content = load_content(session_id)
+    if content:
+        _index_content_into_session_chroma(session_id, content)
+
+
 def search_docs(query: str, session_id: str | None, n_results: int = 3) -> list[dict]:
     """Return the top-*n_results* most relevant chunks for *query* from the session's ChromaDB."""
     if not session_id:
@@ -286,10 +306,14 @@ def _run_pipeline_background(job_id: str, repo_url: str, session_id: str) -> Non
             text=True,
         )
 
+        pipeline_lines = []
         for line in proc.stdout:
             line = line.strip()
             if not line:
                 continue
+            pipeline_lines.append(line)
+            if len(pipeline_lines) > _PIPELINE_BUFFER_LINES:
+                pipeline_lines.pop(0)
             print(f"[Pipeline] {line}")
             if "loning" in line:
                 _upsert_job(job_id, repo_url, "cloning", line, session_id)
@@ -307,10 +331,18 @@ def _run_pipeline_background(job_id: str, repo_url: str, session_id: str) -> Non
                 try:
                     _upload_session_to_gcs(session_id, session_out)
                 except Exception as e:
-                    print(f"[GCS] Upload failed: {e}")
+                    _log("GCS", "ERROR", "Upload failed", error=str(e))
             threading.Thread(target=_index_then_done, args=(job_id, repo_url, session_id), daemon=True).start()
         else:
-            _upsert_job(job_id, repo_url, "error", f"Pipeline exited with code {proc.returncode}", session_id)
+            last_lines = "\n".join(pipeline_lines[-_PIPELINE_BUFFER_LINES:])
+            error_detail = f"Pipeline exited with code {proc.returncode}"
+            if last_lines:
+                full_detail = f"{error_detail}\n\nLast output:\n{last_lines}"
+                error_detail = full_detail[:_PIPELINE_ERROR_MAX_CHARS]
+                if len(full_detail) > _PIPELINE_ERROR_MAX_CHARS:
+                    error_detail += "\n...[truncated]"
+            _upsert_job(job_id, repo_url, "error", error_detail, session_id)
+            _log("Pipeline", "ERROR", f"job={job_id} code={proc.returncode}\n{last_lines}", session_id=session_id)
     except Exception as e:
         _upsert_job(job_id, repo_url, "error", str(e), session_id)
 
@@ -637,6 +669,19 @@ def generate_access_token():
         return None
 
 
+async def _send_ws_error_and_close(ws, code: int, reason: str) -> None:
+    """Send structured ERROR frame to client, then close. Ensures client can display the reason."""
+    try:
+        payload = json.dumps({"type": "ERROR", "message": reason, "code": str(code)})
+        await ws.send(payload)
+    except Exception:
+        pass
+    try:
+        await ws.close(code=code, reason=reason)
+    except Exception:
+        pass
+
+
 async def proxy_task(
     source_websocket: WebSocketCommonProtocol,
     destination_websocket: WebSocketCommonProtocol,
@@ -735,16 +780,10 @@ async def create_proxy(
 
     except ConnectionClosed as e:
         print(f"Server connection closed unexpectedly: {e.code} - {e.reason}")
-        try:
-            await client_websocket.close(code=e.code, reason=e.reason)
-        except Exception:
-            pass
+        await _send_ws_error_and_close(client_websocket, e.code or 1008, e.reason or "Connection closed")
     except Exception as e:
         print(f"Failed to connect to Gemini API: {e}")
-        try:
-            await client_websocket.close(code=1008, reason="Upstream connection failed")
-        except Exception:
-            pass
+        await _send_ws_error_and_close(client_websocket, 1008, "Upstream connection failed")
 
 
 async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> None:
@@ -774,33 +813,26 @@ async def handle_websocket_client(client_websocket: WebSocketServerProtocol) -> 
             bearer_token = generate_access_token()
             if not bearer_token:
                 print("Failed to generate access token")
-                await client_websocket.close(
-                    code=1008, reason="Authentication failed"
-                )
+                await _send_ws_error_and_close(client_websocket, 1008, "Authentication failed")
                 return
             print("Access token generated")
 
         if not service_url:
             print("Error: Service URL is missing")
-            await client_websocket.close(
-                code=1008, reason="Service URL is required"
-            )
+            await _send_ws_error_and_close(client_websocket, 1008, "Service URL is required")
             return
 
         await create_proxy(client_websocket, bearer_token, service_url)
 
     except asyncio.TimeoutError:
         print("Timeout waiting for the first message from the client")
-        await client_websocket.close(code=1008, reason="Timeout")
+        await _send_ws_error_and_close(client_websocket, 1008, "Timeout")
     except json.JSONDecodeError as e:
         print(f"Invalid JSON in first message: {e}")
-        await client_websocket.close(code=1008, reason="Invalid JSON")
+        await _send_ws_error_and_close(client_websocket, 1008, "Invalid JSON")
     except Exception as e:
         print(f"Error handling client: {e}")
-        try:
-            await client_websocket.close(code=1011, reason="Internal error")
-        except Exception:
-            pass
+        await _send_ws_error_and_close(client_websocket, 1011, "Internal error")
 
 
 async def start_websocket_server():

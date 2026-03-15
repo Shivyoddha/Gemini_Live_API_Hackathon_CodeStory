@@ -70,16 +70,24 @@ export class SearchDocsTool extends FunctionCallDefinition {
     if (!query) return;
     console.log(`[SearchDocsTool] Searching for: "${query}"`);
     fetch(`${SEARCH_API_URL}?q=${encodeURIComponent(query)}&session_id=${encodeURIComponent(getSessionId())}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error(r.statusText || `HTTP ${r.status}`);
+        }
+        return r.json();
+      })
       .then((data) => {
         const chunks = data.chunks || [];
         console.log(`[SearchDocsTool] Got ${chunks.length} chunks`);
         if (this.onResult) {
-          this.onResult(query, chunks);
+          this.onResult(query, chunks, null);
         }
       })
       .catch((err) => {
         console.warn("[SearchDocsTool] Search failed:", err);
+        if (this.onResult) {
+          this.onResult(query, [], err?.message || "Search failed");
+        }
       });
   }
 }

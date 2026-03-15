@@ -7,20 +7,15 @@
 # Requires: CODESTORY_PROD_URL set to your Cloud Run service URL
 #   e.g. https://codestory-backend-XXXXX.run.app (no trailing slash)
 #
-# Usage: CODESTORY_PROD_URL=https://your-service.run.app ./scripts/run-prod.sh
-#   or:  ./scripts/run-prod.sh   (will prompt if CODESTORY_PROD_URL not set)
+# Usage: ./scripts/run-prod.sh   (uses default URL for judges, or set CODESTORY_PROD_URL to override)
 
 set -e
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 
-if [ -z "${CODESTORY_PROD_URL}" ]; then
-  echo "CODESTORY_PROD_URL is not set."
-  echo "Set it to your Cloud Run backend URL, e.g.:"
-  echo "  export CODESTORY_PROD_URL=https://codestory-backend-XXXXX.run.app"
-  echo "Then run: ./scripts/run-prod.sh"
-  exit 1
-fi
+# Default to team's deployed Cloud Run URL (for judges / zero-config demo)
+# Replace with your actual Cloud Run service URL after deploying
+CODESTORY_PROD_URL="${CODESTORY_PROD_URL:-https://codestory-backend-953856802382.us-central1.run.app}"
 
 # No trailing slash
 CODESTORY_PROD_URL="${CODESTORY_PROD_URL%/}"

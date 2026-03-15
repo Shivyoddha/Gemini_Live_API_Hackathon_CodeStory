@@ -80,6 +80,49 @@
   margin: 0;
   min-height: 1.2em;
 }
+.pp-message--error {
+  color: #DC2626;
+  font-weight: 500;
+}
+
+/* ── Error block (scrollable output + copy) ──────────────────────────── */
+.pp-error-block {
+  width: 100%;
+  max-width: 420px;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.pp-error-output {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pp-copy-error {
+  align-self: center;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.pp-copy-error:hover {
+  background: #FECACA;
+}
 
 /* ── Steps ───────────────────────────────────────────────────────────── */
 .pp-steps {
