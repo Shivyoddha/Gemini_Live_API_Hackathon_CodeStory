@@ -241,6 +241,7 @@ def _run_pipeline_background(job_id: str, repo_url: str, session_id: str) -> Non
 
         env = os.environ.copy()
         env["PYTHONUNBUFFERED"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
 
         proc = subprocess.Popen(
             [python_exe, PIPELINE_SCRIPT, "--url", repo_url, "--choice", "3", "--output-dir", session_out],

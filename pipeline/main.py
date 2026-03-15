@@ -159,11 +159,11 @@ async def main() -> None:
     print(ctx.summary())
 
     if ctx.doc_zip_path:
-        print(f"  📘 Documentation ZIP : {ctx.doc_zip_path}")
+        print(f"  [DOCS] Documentation ZIP : {ctx.doc_zip_path}")
     if ctx.slide_zip_path:
-        print(f"  🎞️  Slides ZIP        : {ctx.slide_zip_path}")
+        print(f"  [SLIDES] Slides ZIP      : {ctx.slide_zip_path}")
     if ctx.slide_index_path:
-        print(f"  🗂️  Slide Index JSON  : {ctx.slide_index_path}")
+        print(f"  [INDEX] Slide Index JSON : {ctx.slide_index_path}")
         print("       (ready for Multimodal Live API narrator)")
     print("=" * 55 + "\n")
 

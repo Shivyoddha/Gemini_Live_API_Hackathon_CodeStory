@@ -37,52 +37,46 @@ from common import ensure_api_key, log, make_session_service, run_agent_query_wi
 def create_repo_slide_agent(slide_blueprint: List[Dict]) -> Agent:
     return Agent(
         name="repo_slide_generator",
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         description="Generates section-wise multi-slide presentation directly from repository evidence.",
         instruction=f"""
 You are the Technical Presentation Architect.
 
 You MUST analyze the repository directly.
 
-🚨 STRICT ANTI-HALLUCINATION RULES (MANDATORY)
-
-1. Use ONLY repository evidence:
-   - Dependency files
-   - Imports
-   - Config files
-   - Folder structure
-   - Source code
-   - Build scripts
-   - Container files
-
-2. If something is not explicitly present:
-   → DO NOT assume it.
-   → DO NOT statistically infer it.
-   → DO NOT fabricate architecture or tools.
-
-3. If a section has insufficient evidence:
-   → Omit that section entirely.
-
-4. Every technical claim must be grounded in observable repository evidence.
-
 ======================================================
-SLIDE STRUCTURE REQUIREMENTS
+📘 INPUT: SLIDE BLUEPRINT
 ======================================================
 
-Use this predefined structure:
+The following structure defines the sections you are required to cover.
+DO NOT return this JSON list. Use it ONLY to structure your Markdown slides.
 
 {slide_blueprint}
 
-IMPORTANT:
+======================================================
+🚨 STRICT RULES (MANDATORY)
+======================================================
 
-• Each section MUST contain MULTIPLE slides if content allows.
-• No limit on total slides.
-• Slides must be detailed and presentation-ready.
-• Slides must not be overly short.
-• Each slide should meaningfully cover a subtopic of that section.
-• Each slide MUST contain at least 3 bullet points (or equivalent body content). Do not create slides with only a title.
-• Aim for 50–120 words of bullet/body content per slide for consistent pacing.
-• Do not add a final slide that only repeats the section title with no bullet content.
+1. Return ONLY Markdown.
+2. DO NOT return JSON. DO NOT return a copy of the blueprint.
+3. Use ONLY repository evidence:
+   - Dependency files, Imports, Config files, Folder structure, Source code, Build scripts.
+4. If something is not explicitly present:
+   → DO NOT assume it.
+   → DO NOT statistically infer it.
+5. Every technical claim must be grounded in observable repository evidence.
+
+======================================================
+SLIDE CONTENT QUALITY REQUIREMENTS
+======================================================
+
+Each section MUST contain MULTIPLE slides.
+
+Each slide must contain 4–7 substantive bullet points.
+Each bullet point MUST:
+• Explain the *what*, *why*, and *how* — not just name a concept.
+• Provide specific technical details (exact file names, config keys, class names, etc.).
+• Use bold lead terms followed by a clear, complete sentence.
 
 ======================================================
 OUTPUT FORMAT (STRICT)
@@ -92,19 +86,26 @@ OUTPUT FORMAT (STRICT)
 
 ## <Section Title>
 
-### Slide 1: <Subtopic>
-- Detailed bullet points
-- Technically grounded in repository evidence
+### Slide 1: <Subtopic Title>
+- **Bold lead term**: Full explanatory sentence with specific technical details.
+- **Bold lead term**: Full explanatory sentence with specific technical details.
+...
 
-### Slide 2: <Subtopic>
+### Slide 2: <Subtopic Title>
 ...
 
 ## <Next Section Title>
 
-### Slide X: <Subtopic>
+### Slide 1: <Subtopic Title>
 ...
 
-Return ONLY Markdown. Output begins with # Slides and contains only slides (no speaker scripts).
+======================================================
+FINAL CHECK
+======================================================
+
+• Return ONLY Markdown.
+• The "Slide N:" prefix in the H3 header is MANDATORY for every slide.
+• Every claim must be grounded in repository evidence.
 """
     )
 
@@ -153,11 +154,13 @@ async def run_repo_slide_agent_with_existing_repo(
 # ---------------------------------------------------------------------------
 
 
-def extract_slides_and_scripts(markdown_text: str) -> tuple[str, str]:
-    """Extract slides content. Speaker scripts are no longer generated; script_text returns empty."""
-    slides_match = re.search(r"# Slides\s*\n(.*?)(?=\n# Speaker Scripts|\Z)", markdown_text, re.DOTALL)
-    slides_text = slides_match.group(1).strip() if slides_match else ""
-    return slides_text, ""
+def extract_slides_section(markdown_text: str) -> str:
+    """Return only the '# Slides' portion of the agent output.
+
+    Handles both H1 (# Slides) and H2 (## Slides) variations.
+    """
+    slides_match = re.search(r"#{1,2} Slides(.*)", markdown_text, re.DOTALL | re.IGNORECASE)
+    return slides_match.group(1).strip() if slides_match else markdown_text.strip()
 
 
 def split_sections(text: str) -> list[str]:
@@ -166,10 +169,6 @@ def split_sections(text: str) -> list[str]:
 
 def split_slides_within_section(section_text: str) -> list[str]:
     return re.findall(r"(### Slide \d+: .+?)(?=\n### Slide|\Z)", section_text, re.DOTALL)
-
-
-def split_section_scripts(script_text: str) -> list[str]:
-    return re.findall(r"(## .+?)(?=\n## |\Z)", script_text, re.DOTALL)
 
 
 def _normalize_section_title(title: str) -> str:
@@ -222,7 +221,7 @@ def create_presentation_zip(
     caller can write directly to the workspace-root ``slides/`` folder that
     server.py expects.  Returns the path to the created ZIP file.
     """
-    slides_text, _ = extract_slides_and_scripts(markdown_text)
+    slides_text = extract_slides_section(markdown_text)
 
     slide_sections = split_sections(slides_text)
 
@@ -298,7 +297,7 @@ def build_slide_index(
     -------
     Path to the written index file.
     """
-    slides_text, _ = extract_slides_and_scripts(markdown_text)
+    slides_text = extract_slides_section(markdown_text)
 
     slide_sections = split_sections(slides_text)
 

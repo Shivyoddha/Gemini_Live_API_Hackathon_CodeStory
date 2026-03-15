@@ -4,13 +4,13 @@ common.py
 Shared infrastructure for the three-agent documentation pipeline.
 
 Changes from original:
-  • Each agent gets its own InMemorySessionService (no global singleton) to
+  - Each agent gets its own InMemorySessionService (no global singleton) to
     prevent cross-agent session contamination.
-  • run_agent_query_with_retry wraps every API call with exponential back-off so
+  - run_agent_query_with_retry wraps every API call with exponential back-off so
     transient 429 / 500 / 503 errors do not abort the whole pipeline.
-  • log() is a thin structured logger that can be swapped for the stdlib logging
+  - log() is a thin structured logger that can be swapped for the stdlib logging
     module later without touching any call sites.
-  • The original run_agent_query is kept for backwards compatibility.
+  - The original run_agent_query is kept for backwards compatibility.
 """
 
 from __future__ import annotations
@@ -36,10 +36,10 @@ _MIN_LEVEL = LEVELS["INFO"]
 def log(level: str, msg: str) -> None:
     """Structured logger. Drop-in replacement for print() across all modules."""
     if LEVELS.get(level.upper(), 1) >= _MIN_LEVEL:
-        tag = {"INFO": "ℹ️", "WARN": "⚠️", "ERROR": "❌", "DEBUG": "🔍"}.get(
-            level.upper(), "•"
+        tag = {"INFO": "INFO", "WARN": "WARN", "ERROR": "ERROR", "DEBUG": "DEBUG"}.get(
+            level.upper(), "LOG"
         )
-        print(f"{tag}  [{level.upper()}]  {msg}")
+        print(f"[{tag}] {msg}")
 
 
 # ---------------------------------------------------------------------------

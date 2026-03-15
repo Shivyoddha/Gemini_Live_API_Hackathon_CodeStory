@@ -4,9 +4,9 @@ pipeline_context.py
 Shared context object that flows through the entire documentation pipeline.
 
 Having a single PipelineContext means:
-  • The repository is cloned and read from disk exactly once.
-  • Every agent receives the same repo_contents string without re-reading.
-  • Output artefacts (markdown text, zip paths, slide index) accumulate here so
+  - The repository is cloned and read from disk exactly once.
+  - Every agent receives the same repo_contents string without re-reading.
+  - Output artefacts (markdown text, zip paths, slide index) accumulate here so
     the orchestrator and future Live API integration can inspect them without
     touching the filesystem again.
 """
@@ -68,7 +68,7 @@ class PipelineContext:
         return (
             f"repo={self.repo_url!r}  "
             f"sections={sections}  "
-            f"doc={'✅' if self.doc_output else '—'}  "
-            f"slides={'✅' if self.slide_output else '—'}  "
-            f"index={'✅' if self.slide_index_path else '—'}"
+            f"doc={'[x]' if self.doc_output else '[-]'}  "
+            f"slides={'[x]' if self.slide_output else '[-]'}  "
+            f"index={'[x]' if self.slide_index_path else '[-]'}"
         )
