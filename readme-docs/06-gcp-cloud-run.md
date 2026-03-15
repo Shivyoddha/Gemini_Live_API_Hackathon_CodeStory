@@ -63,6 +63,27 @@ For **Cloud Build** (deploy from source), the build runs as your project’s def
 
 ---
 
+## 3a. Create GCS bucket and enable Firestore
+
+For **persistent storage** of generated docs/slides and job state across Cloud Run restarts:
+
+**1. Create a GCS bucket:**
+
+```bash
+gsutil mb -l us-central1 gs://YOUR_BUCKET_NAME
+```
+
+Replace `YOUR_BUCKET_NAME` with a globally unique name (e.g. `codestory-PROJECT_ID`). Grant the Cloud Run service account (or default compute SA) Storage Object Admin on this bucket if needed.
+
+**2. Enable Firestore (Native mode):**
+
+- In Cloud Console: **Firestore** → **Create database** → **Native mode** → choose a location (e.g. `us-central1`).
+- The default compute/service account can read and write Firestore; no extra IAM is required for basic use.
+
+**3. Set `GCS_BUCKET` when deploying** (see step 4 below). If unset, the server falls back to local/ephemeral storage (dev mode).
+
+---
+
 ## 4. Deploy the backend to Cloud Run
 
 From the **repository root** (parent of `app/` and `pipeline/`):
@@ -72,7 +93,7 @@ gcloud run deploy codestory-backend \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID"
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,GCS_BUCKET=YOUR_BUCKET_NAME"
 ```
 
 - **`--source .`** — Builds the image using the `Dockerfile` in the repo root; Cloud Build uploads the context (respecting `.gcloudignore`).
@@ -102,6 +123,7 @@ A workflow in `.github/workflows/deploy-cloudrun.yml` deploys to Cloud Run on ev
 |-------------------|--------|
 | `GCP_SA_KEY`      | Entire contents of the JSON key file (paste as one line). |
 | `GCP_PROJECT_ID`  | Your Google Cloud project ID. |
+| `GCS_BUCKET`      | Your GCS bucket name (from step 3a). |
 
 **3. Push to `main` or run the workflow manually.** The workflow runs `gcloud run deploy` from the repo root (same as step 4 above).
 

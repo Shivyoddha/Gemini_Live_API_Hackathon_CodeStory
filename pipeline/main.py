@@ -66,6 +66,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--url", default=None, help="GitHub repository URL")
     parser.add_argument("--choice", default=None, help="1=docs, 2=slides, 3=both")
+    parser.add_argument("--output-dir", default=None, help="Base dir for documentation/ and slides/ (default: project root)")
     args, _ = parser.parse_known_args()
 
     repo_url = args.url or input("Enter GitHub Repository URL: ").strip()
@@ -80,9 +81,10 @@ async def main() -> None:
     else:
         choice = args.choice
 
-    # Output directories: always write to workspace root so server.py can find them.
-    slides_out_dir = _PROJECT_ROOT / "slides"
-    docs_out_dir = _PROJECT_ROOT / "documentation"
+    # Output directories: use --output-dir if provided (server.py scopes per session), else workspace root.
+    out_base = Path(args.output_dir) if args.output_dir else _PROJECT_ROOT
+    slides_out_dir = out_base / "slides"
+    docs_out_dir = out_base / "documentation"
 
     # ------------------------------------------------------------------
     # Step 1 — Clone repository

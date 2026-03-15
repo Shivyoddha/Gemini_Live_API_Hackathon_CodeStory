@@ -30,6 +30,7 @@ RUN mkdir -p /app/documentation /app/slides
 ENV PORT=8080
 ENV HTTP_PORT=8081
 ENV WS_PORT=8082
+ENV GCS_BUCKET=""
 
 EXPOSE 8080
 
