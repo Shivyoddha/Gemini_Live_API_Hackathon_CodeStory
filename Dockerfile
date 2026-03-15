@@ -3,7 +3,7 @@
 FROM python:3.11-slim
 
 # Nginx for single-port routing (Cloud Run exposes one PORT)
-RUN apt-get update && apt-get install -y --no-install-recommends nginx \
+RUN apt-get update && apt-get install -y --no-install-recommends nginx git \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Python deps ─────────────────────────────────────────────────────────────

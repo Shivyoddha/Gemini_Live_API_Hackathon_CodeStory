@@ -2,9 +2,10 @@
 # Runs on push to main and on manual trigger (workflow_dispatch).
 #
 # Required GitHub secrets:
-#   GCP_SA_KEY    - JSON key of a service account with Cloud Run Admin + Storage + SA User
-#   GCP_PROJECT_ID - Your Google Cloud project ID
-#   GCS_BUCKET    - GCS bucket name for per-session docs/slides (e.g. codestory-content)
+#   GCP_SA_KEY      - JSON key of a service account with Cloud Run Admin + Storage + SA User
+#   GCP_PROJECT_ID  - Your Google Cloud project ID
+#   GCS_BUCKET      - GCS bucket name for per-session docs/slides (e.g. codestory-content)
+#   GEMINI_API_KEY  - API key for the pipeline (Gemini/ADK agents)
 name: Deploy to Cloud Run
 
 on:
@@ -44,6 +45,6 @@ jobs:
             --region ${{ env.REGION }} \
             --build-service-account=projects/${{ secrets.GCP_PROJECT_ID }}/serviceAccounts/github-codestory-deploy@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --allow-unauthenticated \
-            --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GCS_BUCKET=${{ secrets.GCS_BUCKET }}" \
+            --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GCS_BUCKET=${{ secrets.GCS_BUCKET }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
             --no-cpu-throttling \
             --quiet
