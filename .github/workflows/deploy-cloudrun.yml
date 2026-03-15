@@ -42,9 +42,8 @@ jobs:
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --source . \
             --region ${{ env.REGION }} \
-            --build-service-account=github-codestory-deploy@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --build-service-account=projects/${{ secrets.GCP_PROJECT_ID }}/serviceAccounts/github-codestory-deploy@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --allow-unauthenticated \
-            --build-service-account=github-codestory-deploy@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GCS_BUCKET=${{ secrets.GCS_BUCKET }}" \
             --no-cpu-throttling \
             --quiet
