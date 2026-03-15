@@ -1,7 +1,0 @@
-## Business Value
-
-### Slide 1: Streamlining Procurement Processes
-The IRIS Procurement Portal offers significant business value by automating and standardizing the organization's procurement approval workflow. It replaces potential manual, fragmented processes with a structured, digital system. By enforcing a multi-stage review and tracking mechanism for both Document A and Document B, the system inherently enhances accountability among users and increases transparency across the entire procurement cycle. This adherence to process ensures compliance and reduces the risk of oversight.
-
-### Slide 2: Improving Efficiency and Visibility
-Beyond process standardization, this application directly contributes to operational efficiency. It aims to reduce the manual effort and potential for human error typically associated with document handling and approvals. Critically, it provides all relevant stakeholders—from the initial buyer to the final approver and potentially management—with clear, real-time visibility into the status of any procurement document. This improved visibility facilitates faster, more informed decision-making, ultimately leading to quicker procurement cycles and more efficient resource allocation.

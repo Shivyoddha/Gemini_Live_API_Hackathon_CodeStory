@@ -1,3 +1,0 @@
-## Project Overview
-
-This project is a Ruby on Rails web portal designed to demonstrate a procurement approval system for IRIS. It implements a sequential, two-document workflow (Document A and Document B), enabling buyers to initiate requests and multiple approvers (P, Q, R, S) to review and approve them in a defined order. The system includes robust user authentication, a centralized dashboard for tracking document statuses and pending approvals, and an automated mechanism for generating Document B upon the full approval of Document A. Each approval stage meticulously records dates, remarks, and supports both approval and rejection actions, ensuring a transparent and traceable procurement process.

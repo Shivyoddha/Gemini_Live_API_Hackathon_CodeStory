@@ -10,6 +10,7 @@ handling Google Cloud authentication automatically using default credentials.
 import asyncio
 import websockets
 import json
+import shutil
 import ssl
 import certifi
 import os
@@ -226,9 +227,42 @@ def search_docs(query: str, session_id: str | None, n_results: int = 3) -> list[
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
+
+def _clear_session(session_id: str) -> None:
+    """Clear all data for a session: local dir, GCS blobs (when configured), ChromaDB index."""
+    if not session_id:
+        return
+    import tempfile
+    session_out = os.path.join(tempfile.gettempdir(), "sessions", session_id)
+    try:
+        if os.path.isdir(session_out):
+            shutil.rmtree(session_out)
+        os.makedirs(session_out, exist_ok=True)
+    except Exception as e:
+        print(f"[clear-session] Could not clear local dir for {session_id}: {e}")
+
+    if GCS_BUCKET:
+        gcs = _get_gcs_client()
+        if gcs:
+            try:
+                bucket = gcs.bucket(GCS_BUCKET)
+                for blob in bucket.list_blobs(prefix=f"{session_id}/"):
+                    blob.delete()
+                print(f"[clear-session] Cleared GCS prefix {session_id}/")
+            except Exception as e:
+                print(f"[clear-session] Could not clear GCS for {session_id}: {e}")
+
+    with _chroma_lock:
+        if session_id in _session_chroma:
+            del _session_chroma[session_id]
+            print(f"[clear-session] Cleared ChromaDB for {session_id}")
+
+
 def _run_pipeline_background(job_id: str, repo_url: str, session_id: str) -> None:
     """Run the pipeline in a background thread. Writes to session-scoped dir, uploads to GCS when configured."""
     try:
+        _clear_session(session_id)
+
         _upsert_job(job_id, repo_url, "cloning", "Cloning repository…", session_id)
 
         # Session-scoped output dir (local disk)
@@ -497,6 +531,14 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Invalid JSON"})
                 return
             self._handle_run_pipeline(data)
+        elif path == "/clear-session":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length) if length else b"{}"
+            try:
+                data = json.loads(body)
+            except Exception:
+                data = {}
+            self._handle_clear_session(data)
         else:
             self._send_json(404, {"error": "Not found"})
 
@@ -544,6 +586,11 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
             return
         chunks = search_docs(query, session_id)
         self._send_json(200, {"chunks": chunks})
+
+    def _handle_clear_session(self, data: dict):
+        session_id = (data.get("session_id") or "").strip() or "dev"
+        _clear_session(session_id)
+        self._send_json(200, {"ok": True})
 
     # ------------------------------------------------------------------
     # Helpers

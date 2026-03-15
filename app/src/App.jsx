@@ -27,6 +27,10 @@ export default function App() {
     setPage("dashboard");
   }, []);
 
+  const handleStartNew = useCallback(() => {
+    setPage("input");
+  }, []);
+
   if (page === "input") {
     return <GitHubInputPage onJobStarted={handleJobStarted} />;
   }
@@ -44,7 +48,7 @@ export default function App() {
   // dashboard — render the Live API demo in full-screen mode
   return (
     <div className="App App--dashboard">
-      <LiveAPIDemo />
+      <LiveAPIDemo onStartNew={handleStartNew} />
     </div>
   );
 }

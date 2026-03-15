@@ -115,7 +115,7 @@ function SlideControlBar({ audioStreaming, toggleAudio, screenSharing, toggleScr
   );
 }
 
-const LiveAPIDemo = () => {
+const LiveAPIDemo = ({ onStartNew }) => {
   // Connection State
   const [connected, setConnected] = useState(false);
   const [debugInfo, setDebugInfo] = useState("Ready to connect...");
@@ -603,6 +603,19 @@ const LiveAPIDemo = () => {
    * string that gives Gemini full knowledge of the project.
    * Returns { contentData, systemInstruction } or null on failure.
    */
+  const handleStartNewClick = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE}/clear-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: getSessionId() }),
+      });
+    } catch (e) {
+      console.warn("[Start new] Clear session failed:", e);
+    }
+    onStartNew?.();
+  }, [onStartNew]);
+
   const fetchContent = async () => {
     setContentStatus("loading");
     try {
@@ -1486,6 +1499,16 @@ Rules:
           >
             {connected ? "Disconnect" : "Connect"}
           </button>
+          {onStartNew && (
+            <button
+              type="button"
+              className="toolbar-start-new-btn"
+              onClick={handleStartNewClick}
+              title="Clear current content and start a new CodeStory"
+            >
+              Start new CodeStory
+            </button>
+          )}
         </div>
       </div>
 

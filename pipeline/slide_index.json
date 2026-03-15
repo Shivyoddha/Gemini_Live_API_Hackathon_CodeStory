@@ -5,13 +5,8 @@
       "slides": [
         {
           "slide_number": 1,
-          "title": "Core Purpose and Document Workflow",
-          "file": "project_overview/001_core_purpose_and_document_workflow.md"
-        },
-        {
-          "slide_number": 2,
-          "title": "Key System Functionalities",
-          "file": "project_overview/002_key_system_functionalities.md"
+          "title": "Application Purpose and Core Features",
+          "file": "project_overview/001_application_purpose_and_core_features.md"
         }
       ]
     },
@@ -20,13 +15,8 @@
       "slides": [
         {
           "slide_number": 1,
-          "title": "Automating Procurement Workflows",
-          "file": "business_value/001_automating_procurement_workflows.md"
-        },
-        {
-          "slide_number": 2,
-          "title": "Enhancing Transparency and Accountability",
-          "file": "business_value/002_enhancing_transparency_and_accountability.md"
+          "title": "Streamlined Recruitment Process",
+          "file": "business_value/001_streamlined_recruitment_process.md"
         }
       ]
     },
@@ -35,123 +25,168 @@
       "slides": [
         {
           "slide_number": 1,
-          "title": "Core Framework and Database Foundation",
-          "file": "system_architecture/001_core_framework_and_database_foundation.md"
+          "title": "Core Ruby on Rails Structure",
+          "file": "system_architecture/001_core_ruby_on_rails_structure.md"
         },
         {
           "slide_number": 2,
-          "title": "Key Components and Modularization",
-          "file": "system_architecture/002_key_components_and_modularization.md"
-        }
-      ]
-    },
-    {
-      "section": "Procurement Workflow Management",
-      "slides": [
-        {
-          "slide_number": 1,
-          "title": "Sequential Approval Process",
-          "file": "procurement_workflow_management/001_sequential_approval_process.md"
-        },
-        {
-          "slide_number": 2,
-          "title": "Document A to Document B Transition",
-          "file": "procurement_workflow_management/002_document_a_to_document_b_transition.md"
-        }
-      ]
-    },
-    {
-      "section": "User Roles and Authentication",
-      "slides": [
-        {
-          "slide_number": 1,
-          "title": "Role-Based Access and User Definitions",
-          "file": "user_roles_and_authentication/001_role-based_access_and_user_definitions.md"
-        },
-        {
-          "slide_number": 2,
-          "title": "Secure Authentication and Admin Management",
-          "file": "user_roles_and_authentication/002_secure_authentication_and_admin_management.md"
-        }
-      ]
-    },
-    {
-      "section": "Email Notification System",
-      "slides": [
-        {
-          "slide_number": 1,
-          "title": "Mailer Configuration and Functionality",
-          "file": "email_notification_system/001_mailer_configuration_and_functionality.md"
-        },
-        {
-          "slide_number": 2,
-          "title": "Workflow-Driven Notifications and Robustness",
-          "file": "email_notification_system/002_workflow-driven_notifications_and_robustness.md"
+          "title": "Frontend & Asset Management",
+          "file": "system_architecture/002_frontend__asset_management.md"
         },
         {
           "slide_number": 3,
-          "title": "Debugging and Testing Support",
-          "file": "email_notification_system/003_debugging_and_testing_support.md"
+          "title": "Key Integrations and Services",
+          "file": "system_architecture/003_key_integrations_and_services.md"
         }
       ]
     },
     {
-      "section": "Deployment and Development Environment",
+      "section": "User Management & Access Control",
       "slides": [
         {
           "slide_number": 1,
-          "title": "Local Development Environment with Docker",
-          "file": "deployment_and_development_environment/001_local_development_environment_with_docker.md"
+          "title": "Authentication with Devise",
+          "file": "user_management__access_control/001_authentication_with_devise.md"
         },
         {
           "slide_number": 2,
-          "title": "Production Deployment on Render",
-          "file": "deployment_and_development_environment/002_production_deployment_on_render.md"
+          "title": "Authorization with CanCanCan and Role-Based Access",
+          "file": "user_management__access_control/002_authorization_with_cancancan_and_role-based_access.md"
         },
         {
           "slide_number": 3,
-          "title": "Automated Environment Management Scripts",
-          "file": "deployment_and_development_environment/003_automated_environment_management_scripts.md"
+          "title": "Profile Photo and Signature Uploads",
+          "file": "user_management__access_control/003_profile_photo_and_signature_uploads.md"
         }
       ]
     },
     {
-      "section": "Database Schema and Management",
+      "section": "Dynamic Form & Questionnaire System",
       "slides": [
         {
           "slide_number": 1,
-          "title": "Database Technology and Schema Overview",
-          "file": "database_schema_and_management/001_database_technology_and_schema_overview.md"
+          "title": "Core Form Definition and Structure",
+          "file": "dynamic_form__questionnaire_system/001_core_form_definition_and_structure.md"
         },
         {
           "slide_number": 2,
-          "title": "Table Structures for Users and Documents",
-          "file": "database_schema_and_management/002_table_structures_for_users_and_documents.md"
+          "title": "Dynamic Question Types and Options",
+          "file": "dynamic_form__questionnaire_system/002_dynamic_question_types_and_options.md"
         },
         {
           "slide_number": 3,
-          "title": "Database Initialization and Maintenance",
-          "file": "database_schema_and_management/003_database_initialization_and_maintenance.md"
+          "title": "Applicant Response Submission and Management",
+          "file": "dynamic_form__questionnaire_system/003_applicant_response_submission_and_management.md"
         }
       ]
     },
     {
-      "section": "Frontend Design and User Interface",
+      "section": "Credit Calculation & Validation Module",
       "slides": [
         {
           "slide_number": 1,
-          "title": "Overall UI Framework and Styling",
-          "file": "frontend_design_and_user_interface/001_overall_ui_framework_and_styling.md"
+          "title": "Credit Structure and Input",
+          "file": "credit_calculation__validation_module/001_credit_structure_and_input.md"
         },
         {
           "slide_number": 2,
-          "title": "Interactive Dashboard and Status Visualization",
-          "file": "frontend_design_and_user_interface/002_interactive_dashboard_and_status_visualization.md"
+          "title": "Automated Credit Calculation",
+          "file": "credit_calculation__validation_module/002_automated_credit_calculation.md"
         },
         {
           "slide_number": 3,
-          "title": "Responsive Design and User Experience Elements",
-          "file": "frontend_design_and_user_interface/003_responsive_design_and_user_experience_elements.md"
+          "title": "Validation Workflow and CSV Import",
+          "file": "credit_calculation__validation_module/003_validation_workflow_and_csv_import.md"
+        }
+      ]
+    },
+    {
+      "section": "File Management & PDF Generation",
+      "slides": [
+        {
+          "slide_number": 1,
+          "title": "Robust File Upload Capabilities with Active Storage",
+          "file": "file_management__pdf_generation/001_robust_file_upload_capabilities_with_active_storage.md"
+        },
+        {
+          "slide_number": 2,
+          "title": "Comprehensive PDF Report Generation",
+          "file": "file_management__pdf_generation/002_comprehensive_pdf_report_generation.md"
+        }
+      ]
+    },
+    {
+      "section": "Payment Processing",
+      "slides": [
+        {
+          "slide_number": 1,
+          "title": "Razorpay Integration for Application Fees",
+          "file": "payment_processing/001_razorpay_integration_for_application_fees.md"
+        },
+        {
+          "slide_number": 2,
+          "title": "Automated Payment Confirmation Emails",
+          "file": "payment_processing/002_automated_payment_confirmation_emails.md"
+        }
+      ]
+    },
+    {
+      "section": "Admin and Validator Interfaces",
+      "slides": [
+        {
+          "slide_number": 1,
+          "title": "RailsAdmin for Comprehensive Data Management",
+          "file": "admin_and_validator_interfaces/001_railsadmin_for_comprehensive_data_management.md"
+        },
+        {
+          "slide_number": 2,
+          "title": "Admin and Validator Specific Views",
+          "file": "admin_and_validator_interfaces/002_admin_and_validator_specific_views.md"
+        },
+        {
+          "slide_number": 3,
+          "title": "Validation Actions and Eligibility",
+          "file": "admin_and_validator_interfaces/003_validation_actions_and_eligibility.md"
+        }
+      ]
+    },
+    {
+      "section": "Frontend Technologies",
+      "slides": [
+        {
+          "slide_number": 1,
+          "title": "Responsive Design with Bootstrap",
+          "file": "frontend_technologies/001_responsive_design_with_bootstrap.md"
+        },
+        {
+          "slide_number": 2,
+          "title": "Dynamic Interactions with Hotwire (Turbo and Stimulus)",
+          "file": "frontend_technologies/002_dynamic_interactions_with_hotwire_turbo_and_stimulus.md"
+        },
+        {
+          "slide_number": 3,
+          "title": "Asset Processing Pipeline",
+          "file": "frontend_technologies/003_asset_processing_pipeline.md"
+        }
+      ]
+    },
+    {
+      "section": "Email Notification Service",
+      "slides": [
+        {
+          "slide_number": 1,
+          "title": "Action Mailer Configuration and Setup",
+          "file": "email_notification_service/001_action_mailer_configuration_and_setup.md"
+        },
+        {
+          "slide_number": 2,
+          "title": "Payment Confirmation Notifications",
+          "file": "email_notification_service/002_payment_confirmation_notifications.md"
+        },
+        {
+          "slide_number": 3,
+          "title": "Credit Validation Outcome Notifications",
+          "file": "email_notification_service/003_credit_validation_outcome_notifications.md"
         }
       ]
     }
