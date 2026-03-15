@@ -75,7 +75,7 @@ async def main() -> None:
     if args.choice is None:
         print("\nChoose what to run:")
         print("1 → Codebase Documentation")
-        print("2 → Slides + Speaker Scripts")
+        print("2 → Slides")
         print("3 → Both")
         choice = input("Enter choice (1/2/3): ").strip()
     else:

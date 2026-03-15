@@ -215,7 +215,7 @@ def create_presentation_zip(
     output_zip: str = "repository_presentation.zip",
     base_dir: Path | None = None,
 ) -> Path:
-    """Write per-slide .md files into a ZIP. Speaker scripts are no longer generated.
+    """Write per-slide .md files into a ZIP.
 
     *base_dir* overrides the default ``presentation_output`` directory so the
     caller can write directly to the workspace-root ``slides/`` folder that

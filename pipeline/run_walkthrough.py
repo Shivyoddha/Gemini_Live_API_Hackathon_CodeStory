@@ -4,7 +4,7 @@ run_walkthrough.py
 Non-interactive entrypoint for the web app (production).
 Usage:
   python run_walkthrough.py <github_url> --docs     # generate documentation only
-  python run_walkthrough.py <github_url> --slides   # generate slides + speaker scripts only
+  python run_walkthrough.py <github_url> --slides   # generate slides only
 
 The web app replaces {githubUrl} with the URL the user pasted and runs these
 commands from the project root. Do not paste a prompt here; paste the command.
@@ -75,7 +75,7 @@ def main() -> None:
         help="GitHub repository URL (e.g. https://github.com/owner/repo)",
     )
     parser.add_argument("--docs", action="store_true", help="Generate documentation only")
-    parser.add_argument("--slides", action="store_true", help="Generate slides + speaker scripts only")
+    parser.add_argument("--slides", action="store_true", help="Generate slides only")
     args = parser.parse_args()
 
     if not args.docs and not args.slides:

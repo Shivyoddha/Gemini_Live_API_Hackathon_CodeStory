@@ -52,7 +52,7 @@ class PipelineContext:
     """Path to the ZIP produced by Agent 2."""
 
     slide_output: str = ""
-    """Full markdown string returned by Agent 3 (slides + speaker scripts)."""
+    """Full markdown string returned by Agent 3 (slides)."""
 
     slide_zip_path: Path | None = None
     """Path to the ZIP produced by Agent 3."""
