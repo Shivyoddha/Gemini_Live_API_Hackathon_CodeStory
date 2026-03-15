@@ -11,7 +11,7 @@ import {
 } from "../utils/media-utils";
 import { ShowAlertTool, AddCSSStyleTool, SwitchSlideTool, SearchDocsTool, DownloadContentTool, ShowDynamicSlideTool } from "../utils/tools";
 import SlideCanvas from "./SlideCanvas";
-import { API_BASE } from "../config";
+import { API_BASE, getSessionId } from "../config";
 import "./LiveAPIDemo.css";
 
 const CONTENT_API_URL = `${API_BASE}/content`;
@@ -605,7 +605,8 @@ const LiveAPIDemo = () => {
   const fetchContent = async () => {
     setContentStatus("loading");
     try {
-      const res = await fetch(CONTENT_API_URL);
+      const sid = getSessionId();
+      const res = await fetch(`${CONTENT_API_URL}?session_id=${encodeURIComponent(sid)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 

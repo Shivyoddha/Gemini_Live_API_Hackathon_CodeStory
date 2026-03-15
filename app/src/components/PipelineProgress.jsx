@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./PipelineProgress.css";
 
-import { API_BASE } from "../config";
+import { API_BASE, getSessionId } from "../config";
 const POLL_INTERVAL = 2000;
 
 const STATUS_LABELS = {
@@ -33,7 +33,7 @@ export default function PipelineProgress({ jobId, repoUrl, onComplete }) {
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch(`${API_BASE}/pipeline-status/${jobId}`);
+        const res = await fetch(`${API_BASE}/pipeline-status/${jobId}?session_id=${encodeURIComponent(getSessionId())}`);
         if (!res.ok) return;
         const data = await res.json();
         setStatus(data.status);

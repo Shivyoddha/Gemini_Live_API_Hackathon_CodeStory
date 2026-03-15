@@ -1,5 +1,5 @@
 import { FunctionCallDefinition } from "./gemini-api";
-import { API_BASE } from "../config";
+import { API_BASE, getSessionId } from "../config";
 
 const SEARCH_API_URL = `${API_BASE}/search-docs`;
 
@@ -69,7 +69,7 @@ export class SearchDocsTool extends FunctionCallDefinition {
   functionToCall({ query }) {
     if (!query) return;
     console.log(`[SearchDocsTool] Searching for: "${query}"`);
-    fetch(`${SEARCH_API_URL}?q=${encodeURIComponent(query)}`)
+    fetch(`${SEARCH_API_URL}?q=${encodeURIComponent(query)}&session_id=${encodeURIComponent(getSessionId())}`)
       .then((r) => r.json())
       .then((data) => {
         const chunks = data.chunks || [];

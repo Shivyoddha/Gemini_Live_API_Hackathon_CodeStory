@@ -42,17 +42,52 @@ DOCS_DIR = os.path.join(WORKSPACE_ROOT, "documentation")
 SLIDES_DIR = os.path.join(WORKSPACE_ROOT, "slides")
 PIPELINE_SCRIPT = os.path.join(WORKSPACE_ROOT, "pipeline", "main.py")
 
-# SQLite job-tracking database
+# SQLite job-tracking database (dev fallback when Firestore not configured)
 DB_PATH = os.path.join(_SCRIPT_DIR, "jobs.db")
 
-# ChromaDB persistent store
-CHROMA_PATH = os.path.join(_SCRIPT_DIR, "chroma.db")
-_chroma_collection = None       # initialised lazily
-_chroma_lock = threading.Lock() # guards one-time setup
+# GCS + Firestore (dev fallback when not set)
+GCS_BUCKET = os.environ.get("GCS_BUCKET") or ""
+_gcs_client = None
+_fs_client = None
+_gcs_fs_lock = threading.Lock()
+
+# Per-session in-memory ChromaDB (no persistent chroma.db file)
+_session_chroma = {}
+_chroma_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
-# SQLite helpers
+# GCS helpers (lazy init, fallback when GCS_BUCKET not set)
+# ---------------------------------------------------------------------------
+
+def _get_gcs_client():
+    global _gcs_client
+    if not GCS_BUCKET:
+        return None
+    with _gcs_fs_lock:
+        if _gcs_client is None:
+            try:
+                from google.cloud import storage
+                _gcs_client = storage.Client()
+            except Exception as e:
+                print(f"[GCS] Could not initialise: {e}")
+    return _gcs_client
+
+
+def _get_fs_client():
+    global _fs_client
+    with _gcs_fs_lock:
+        if _fs_client is None:
+            try:
+                from google.cloud import firestore
+                _fs_client = firestore.Client()
+            except Exception as e:
+                print(f"[Firestore] Could not initialise: {e}")
+    return _fs_client
+
+
+# ---------------------------------------------------------------------------
+# SQLite helpers (dev fallback)
 # ---------------------------------------------------------------------------
 
 def _get_db() -> sqlite3.Connection:
@@ -71,7 +106,21 @@ def _get_db() -> sqlite3.Connection:
     return conn
 
 
-def _upsert_job(job_id: str, url: str, status: str, message: str) -> None:
+def _upsert_job(job_id: str, url: str, status: str, message: str, session_id: str | None = None) -> None:
+    """Write job state. Uses Firestore when configured and session_id present; else SQLite."""
+    fs = _get_fs_client() if session_id else None
+    if fs and session_id:
+        try:
+            doc_ref = fs.collection("sessions").document(session_id).collection("jobs").document(job_id)
+            data = {"url": url, "status": status, "message": message}
+            doc = doc_ref.get()
+            if not doc.exists:
+                data["created_at"] = time.time()
+            doc_ref.set(data, merge=True)
+            return
+        except Exception as e:
+            print(f"[Firestore] upsert error: {e}")
+    # Fallback: SQLite (no session isolation in dev)
     with _get_db() as conn:
         conn.execute(
             "INSERT OR REPLACE INTO jobs (id, url, status, message, created_at) "
@@ -80,7 +129,18 @@ def _upsert_job(job_id: str, url: str, status: str, message: str) -> None:
         )
 
 
-def _get_job(job_id: str) -> dict | None:
+def _get_job(job_id: str, session_id: str | None = None) -> dict | None:
+    """Read job state. Uses Firestore when configured and session_id present; else SQLite."""
+    fs = _get_fs_client() if session_id else None
+    if fs and session_id:
+        try:
+            doc = fs.collection("sessions").document(session_id).collection("jobs").document(job_id).get()
+            if doc.exists:
+                d = doc.to_dict()
+                return {"id": job_id, "url": d.get("url", ""), "status": d.get("status", ""), "message": d.get("message", ""), "created_at": d.get("created_at")}
+            return None
+        except Exception as e:
+            print(f"[Firestore] get error: {e}")
     with _get_db() as conn:
         row = conn.execute(
             "SELECT id, url, status, message, created_at FROM jobs WHERE id=?",
@@ -92,23 +152,8 @@ def _get_job(job_id: str) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
-# ChromaDB helpers
+# ChromaDB helpers (per-session in-memory EphemeralClient, no disk)
 # ---------------------------------------------------------------------------
-
-def _get_chroma_collection():
-    """Return (and lazily create) the ChromaDB collection."""
-    global _chroma_collection
-    with _chroma_lock:
-        if _chroma_collection is None:
-            try:
-                import chromadb
-                client = chromadb.PersistentClient(path=CHROMA_PATH)
-                _chroma_collection = client.get_or_create_collection("documentation")
-            except Exception as e:
-                print(f"[ChromaDB] Could not initialise: {e}")
-                return None
-    return _chroma_collection
-
 
 def _chunk_text(text: str, chunk_size: int = 500) -> list[str]:
     """Split *text* into word-count chunks of *chunk_size*."""
@@ -116,22 +161,32 @@ def _chunk_text(text: str, chunk_size: int = 500) -> list[str]:
     return [" ".join(words[i : i + chunk_size]) for i in range(0, len(words), chunk_size)]
 
 
-def index_content_into_chroma() -> None:
-    """Index all docs and slides into ChromaDB (upsert — safe to call repeatedly)."""
-    collection = _get_chroma_collection()
+def _get_session_chroma(session_id: str):
+    """Return (and lazily create) the per-session ChromaDB collection (EphemeralClient)."""
+    with _chroma_lock:
+        if session_id not in _session_chroma:
+            try:
+                import chromadb
+                client = chromadb.EphemeralClient()
+                _session_chroma[session_id] = client.get_or_create_collection("documentation")
+            except Exception as e:
+                print(f"[ChromaDB] Could not initialise for session {session_id}: {e}")
+                return None
+    return _session_chroma.get(session_id)
+
+
+def _index_content_into_session_chroma(session_id: str, content: dict) -> None:
+    """Index docs and slides into the session's in-memory ChromaDB collection."""
+    collection = _get_session_chroma(session_id)
     if collection is None:
         return
-
-    content = load_content()
     documents, metadatas, ids = [], [], []
-
     for doc in content.get("docs", []):
         for i, chunk in enumerate(_chunk_text(doc["text"])):
             doc_id = f"doc__{doc['filename']}__{i}"
             documents.append(chunk)
             metadatas.append({"source": doc["filename"], "type": "doc"})
             ids.append(doc_id)
-
     for slide in content.get("slides", []):
         doc_id = f"slide__{slide['module']}__{slide['filename']}"
         documents.append(slide["text"])
@@ -141,19 +196,23 @@ def index_content_into_chroma() -> None:
             "module": slide["module"],
         })
         ids.append(doc_id)
-
     if documents:
         collection.upsert(documents=documents, metadatas=metadatas, ids=ids)
-        print(f"[ChromaDB] Indexed/refreshed {len(documents)} chunks.")
+        print(f"[ChromaDB] Indexed {len(documents)} chunks for session {session_id}")
 
 
-def search_docs(query: str, n_results: int = 3) -> list[dict]:
-    """Return the top-*n_results* most relevant chunks for *query*."""
-    collection = _get_chroma_collection()
+def search_docs(query: str, session_id: str | None, n_results: int = 3) -> list[dict]:
+    """Return the top-*n_results* most relevant chunks for *query* from the session's ChromaDB."""
+    if not session_id:
+        return []
+    collection = _get_session_chroma(session_id)
     if collection is None:
         return []
     try:
-        results = collection.query(query_texts=[query], n_results=min(n_results, collection.count() or 1))
+        count = collection.count()
+        if count == 0:
+            return []
+        results = collection.query(query_texts=[query], n_results=min(n_results, count))
         chunks = []
         for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
             chunks.append({"text": doc, "source": meta.get("source", "")})
@@ -167,12 +226,16 @@ def search_docs(query: str, n_results: int = 3) -> list[dict]:
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
-def _run_pipeline_background(job_id: str, repo_url: str) -> None:
-    """Run the pipeline pipeline in a background thread."""
+def _run_pipeline_background(job_id: str, repo_url: str, session_id: str) -> None:
+    """Run the pipeline in a background thread. Writes to session-scoped dir, uploads to GCS when configured."""
     try:
-        _upsert_job(job_id, repo_url, "cloning", "Cloning repository…")
+        _upsert_job(job_id, repo_url, "cloning", "Cloning repository…", session_id)
 
-        # Locate the venv Python so we inherit the same packages
+        # Session-scoped output dir (local disk)
+        import tempfile
+        session_out = os.path.join(tempfile.gettempdir(), "sessions", session_id)
+        os.makedirs(session_out, exist_ok=True)
+
         venv_python = os.path.join(WORKSPACE_ROOT, ".venv", "bin", "python")
         python_exe = venv_python if os.path.isfile(venv_python) else sys.executable
 
@@ -180,7 +243,7 @@ def _run_pipeline_background(job_id: str, repo_url: str) -> None:
         env["PYTHONUNBUFFERED"] = "1"
 
         proc = subprocess.Popen(
-            [python_exe, PIPELINE_SCRIPT, "--url", repo_url, "--choice", "3"],
+            [python_exe, PIPELINE_SCRIPT, "--url", repo_url, "--choice", "3", "--output-dir", session_out],
             cwd=os.path.join(WORKSPACE_ROOT, "pipeline"),
             env=env,
             stdout=subprocess.PIPE,
@@ -193,41 +256,106 @@ def _run_pipeline_background(job_id: str, repo_url: str) -> None:
             if not line:
                 continue
             print(f"[Pipeline] {line}")
-            # Map log lines to friendlier status messages
             if "loning" in line:
-                _upsert_job(job_id, repo_url, "cloning", line)
+                _upsert_job(job_id, repo_url, "cloning", line, session_id)
             elif "eading" in line or "blueprint" in line.lower():
-                _upsert_job(job_id, repo_url, "running", line)
+                _upsert_job(job_id, repo_url, "running", line, session_id)
             elif "documentation" in line.lower() or "slide" in line.lower():
-                _upsert_job(job_id, repo_url, "running", line)
+                _upsert_job(job_id, repo_url, "running", line, session_id)
 
         proc.wait()
 
         if proc.returncode == 0:
-            _upsert_job(job_id, repo_url, "indexing", "Indexing content into ChromaDB…")
-            # Re-index so search works immediately for the new repo
-            threading.Thread(target=_index_then_done, args=(job_id, repo_url), daemon=True).start()
+            _upsert_job(job_id, repo_url, "indexing", "Indexing content into ChromaDB…", session_id)
+            # Upload to GCS if configured
+            if GCS_BUCKET:
+                try:
+                    _upload_session_to_gcs(session_id, session_out)
+                except Exception as e:
+                    print(f"[GCS] Upload failed: {e}")
+            threading.Thread(target=_index_then_done, args=(job_id, repo_url, session_id), daemon=True).start()
         else:
-            _upsert_job(job_id, repo_url, "error", f"Pipeline exited with code {proc.returncode}")
+            _upsert_job(job_id, repo_url, "error", f"Pipeline exited with code {proc.returncode}", session_id)
     except Exception as e:
-        _upsert_job(job_id, repo_url, "error", str(e))
+        _upsert_job(job_id, repo_url, "error", str(e), session_id)
 
 
-def _index_then_done(job_id: str, repo_url: str) -> None:
+def _upload_session_to_gcs(session_id: str, session_out: str) -> None:
+    """Upload documentation/ and slides/ from session_out to GCS gs://{bucket}/{session_id}/."""
+    client = _get_gcs_client()
+    if not client:
+        return
+    bucket = client.bucket(GCS_BUCKET)
+    docs_dir = os.path.join(session_out, "documentation")
+    slides_dir = os.path.join(session_out, "slides")
+    for base_dir, prefix in [(docs_dir, "documentation"), (slides_dir, "slides")]:
+        if not os.path.isdir(base_dir):
+            continue
+        for root, _, files in os.walk(base_dir):
+            for f in files:
+                if not f.endswith(".md"):
+                    continue
+                path = os.path.join(root, f)
+                rel = os.path.relpath(path, session_out)
+                blob_name = f"{session_id}/{rel}"
+                blob = bucket.blob(blob_name)
+                with open(path, "rb") as src:
+                    blob.upload_from_file(src, content_type="text/markdown")
+    print(f"[GCS] Uploaded session {session_id} to gs://{GCS_BUCKET}/{session_id}/")
+
+
+def _index_then_done(job_id: str, repo_url: str, session_id: str) -> None:
     try:
-        index_content_into_chroma()
-        _upsert_job(job_id, repo_url, "done", "Pipeline complete — content ready.")
+        index_content_into_chroma(session_id)
+        _upsert_job(job_id, repo_url, "done", "Pipeline complete — content ready.", session_id)
     except Exception as e:
-        _upsert_job(job_id, repo_url, "done", f"Pipeline complete (index warning: {e})")
+        _upsert_job(job_id, repo_url, "done", f"Pipeline complete (index warning: {e})", session_id)
 
 
-def load_content():
-    """Read all docs and slides from disk (always fresh, no caching)."""
+def load_content(session_id: str | None = None):
+    """Read docs and slides. When GCS_BUCKET set and session_id given, read from GCS. Else from local disk (dev)."""
     docs = []
     slides = []
 
-    # Load documentation markdown files
-    doc_pattern = os.path.join(DOCS_DIR, "*.md")
+    # GCS path: gs://{bucket}/{session_id}/documentation/ and /slides/
+    gcs = _get_gcs_client()
+    if GCS_BUCKET and session_id and gcs:
+        try:
+            bucket = gcs.bucket(GCS_BUCKET)
+            # List and read documentation blobs
+            for blob in bucket.list_blobs(prefix=f"{session_id}/documentation/"):
+                if blob.name.endswith(".md"):
+                    content = blob.download_as_text(encoding="utf-8")
+                    basename = os.path.basename(blob.name)
+                    module_key = os.path.splitext(basename)[0].lower().replace("_and_", "__")
+                    docs.append({"filename": basename, "module": module_key, "text": content})
+            # List and read slides (organized by module subdir: {session_id}/slides/{module}/file.md)
+            for blob in bucket.list_blobs(prefix=f"{session_id}/slides/"):
+                if blob.name.endswith(".md"):
+                    content = blob.download_as_text(encoding="utf-8")
+                    parts = blob.name.split("/")
+                    if len(parts) >= 3:
+                        module_dir = parts[-2]
+                        basename = parts[-1]
+                        slides.append({"module": module_dir, "filename": basename, "text": content})
+            if docs or slides:
+                project_name = _infer_project_name(docs, slides)
+                return {"docs": docs, "slides": slides, "project_name": project_name}
+        except Exception as e:
+            print(f"[GCS] Error loading content for session {session_id}: {e}")
+
+    # Fallback: local disk (dev mode)
+    # Prefer session-scoped dir if it exists (/tmp/sessions/{session_id}/)
+    import tempfile
+    session_out = os.path.join(tempfile.gettempdir(), "sessions", (session_id or ""))
+    if session_id and os.path.isdir(session_out):
+        dev_docs_dir = os.path.join(session_out, "documentation")
+        dev_slides_dir = os.path.join(session_out, "slides")
+    else:
+        dev_docs_dir = DOCS_DIR
+        dev_slides_dir = SLIDES_DIR
+
+    doc_pattern = os.path.join(dev_docs_dir, "*.md")
     for path in sorted(glob.glob(doc_pattern)):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -245,21 +373,22 @@ def load_content():
             print(f"Warning: Could not read doc {path}: {e}")
 
     # Load slides markdown files grouped by subdirectory (module)
-    for module_dir in sorted(os.listdir(SLIDES_DIR)):
-        module_path = os.path.join(SLIDES_DIR, module_dir)
-        if not os.path.isdir(module_path):
-            continue
-        slide_pattern = os.path.join(module_path, "*.md")
-        for path in sorted(glob.glob(slide_pattern)):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    slides.append({
-                        "module": module_dir,
-                        "filename": os.path.basename(path),
-                        "text": f.read(),
-                    })
-            except Exception as e:
-                print(f"Warning: Could not read slide {path}: {e}")
+    if os.path.isdir(dev_slides_dir):
+        for module_dir in sorted(os.listdir(dev_slides_dir)):
+            module_path = os.path.join(dev_slides_dir, module_dir)
+            if not os.path.isdir(module_path):
+                continue
+            slide_pattern = os.path.join(module_path, "*.md")
+            for path in sorted(glob.glob(slide_pattern)):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        slides.append({
+                            "module": module_dir,
+                            "filename": os.path.basename(path),
+                            "text": f.read(),
+                        })
+                except Exception as e:
+                    print(f"Warning: Could not read slide {path}: {e}")
 
     # Derive a project name from the first available content (first line of first doc/slide)
     project_name = _infer_project_name(docs, slides)
@@ -321,13 +450,16 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         if path == "/content":
-            self._handle_content()
+            session_id = (qs.get("session_id") or [""])[0].strip() or "dev"
+            self._handle_content(session_id)
         elif path.startswith("/pipeline-status/"):
-            job_id = path[len("/pipeline-status/"):]
-            self._handle_pipeline_status(job_id)
+            job_id = path[len("/pipeline-status/"):].rstrip("/")
+            session_id = (qs.get("session_id") or [""])[0].strip() or "dev"
+            self._handle_pipeline_status(job_id, session_id)
         elif path == "/search-docs":
             query = qs.get("q", [""])[0].strip()
-            self._handle_search_docs(query)
+            session_id = (qs.get("session_id") or [""])[0].strip() or "dev"
+            self._handle_search_docs(query, session_id)
         else:
             self._send_json(404, {"error": "Not found"})
 
@@ -351,9 +483,9 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
     # Handlers
     # ------------------------------------------------------------------
 
-    def _handle_content(self):
+    def _handle_content(self, session_id: str):
         try:
-            content = load_content()
+            content = load_content(session_id)
             self._send_json(200, content)
         except Exception as e:
             self._send_json(500, {"error": str(e)})
@@ -364,30 +496,32 @@ class ContentRequestHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "url is required"})
             return
 
+        session_id = (data.get("session_id") or "").strip() or "dev"
+
         job_id = str(uuid.uuid4())
-        _upsert_job(job_id, repo_url, "queued", "Pipeline queued…")
+        _upsert_job(job_id, repo_url, "queued", "Pipeline queued…", session_id)
 
         t = threading.Thread(
             target=_run_pipeline_background,
-            args=(job_id, repo_url),
+            args=(job_id, repo_url, session_id),
             daemon=True,
         )
         t.start()
 
         self._send_json(200, {"jobId": job_id})
 
-    def _handle_pipeline_status(self, job_id: str):
-        job = _get_job(job_id)
+    def _handle_pipeline_status(self, job_id: str, session_id: str):
+        job = _get_job(job_id, session_id)
         if job is None:
             self._send_json(404, {"error": "Job not found"})
             return
         self._send_json(200, {"status": job["status"], "message": job["message"]})
 
-    def _handle_search_docs(self, query: str):
+    def _handle_search_docs(self, query: str, session_id: str):
         if not query:
             self._send_json(400, {"error": "q parameter is required"})
             return
-        chunks = search_docs(query)
+        chunks = search_docs(query, session_id)
         self._send_json(200, {"chunks": chunks})
 
     # ------------------------------------------------------------------
@@ -418,20 +552,7 @@ def start_http_server():
     server = HTTPServer(("0.0.0.0", HTTP_PORT), ContentRequestHandler)
     print(f"Content API running on http://localhost:{HTTP_PORT}")
 
-    # Auto-index on startup if content exists and ChromaDB is empty (dev mode convenience)
-    def _auto_index():
-        try:
-            col = _get_chroma_collection()
-            if col is not None and os.path.isdir(DOCS_DIR) and os.path.isdir(SLIDES_DIR):
-                if col.count() == 0:
-                    print("[ChromaDB] Auto-indexing existing content on startup…")
-                    index_content_into_chroma()
-                else:
-                    print(f"[ChromaDB] {col.count()} chunks already indexed.")
-        except Exception as e:
-            print(f"[ChromaDB] Auto-index skipped: {e}")
-
-    threading.Thread(target=_auto_index, daemon=True).start()
+    # Per-session ChromaDB is indexed on first search for each session (no startup auto-index)
     server.serve_forever()
 
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { API_BASE } from "../config";
+import { API_BASE, getSessionId } from "../config";
 import "./GitHubInputPage.css";
 
 export default function GitHubInputPage({ onJobStarted }) {
@@ -26,7 +26,7 @@ export default function GitHubInputPage({ onJobStarted }) {
       const res = await fetch(`${API_BASE}/run-pipeline`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
+        body: JSON.stringify({ url: trimmed, session_id: getSessionId() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Server error");

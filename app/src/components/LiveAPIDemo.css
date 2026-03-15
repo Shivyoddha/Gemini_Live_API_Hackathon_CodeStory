@@ -593,6 +593,7 @@ button.disconnect:hover {
   color: #1E293B;
   border-bottom: 2px solid #E2E8F0;
   flex-shrink: 0;
+  text-align: center;
 }
 .dashboard-chat-panel .chat-container {
   flex: 1;
