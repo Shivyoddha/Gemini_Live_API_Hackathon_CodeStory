@@ -173,6 +173,26 @@ The frontend will call the Content API and run the pipeline on Cloud Run, and vo
 
 3. Users must set the **Proxy WebSocket URL** in the UI to `wss://your-cloud-run-url/ws` and the **GCP Project ID** before connecting (or you can prefill these in code/config for your domain).
 
+### Option C — Deploy frontend to GitHub Pages (automated)
+
+A workflow in `.github/workflows/deploy-pages.yml` builds and deploys the frontend to GitHub Pages on push to `main` or when run manually.
+
+**Required setup:**
+
+1. **Add repository secret** `CODESTORY_PROD_URL`:
+   - **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+   - Name: `CODESTORY_PROD_URL`
+   - Value: Your Cloud Run service URL (e.g. `https://codestory-backend-xxxxx-uc.a.run.app`, no trailing slash)
+
+2. **Enable GitHub Pages:**
+   - **Settings** → **Pages** → **Build and deployment** → **Source:** GitHub Actions
+   - Save (no branch needed; the workflow deploys the built artifact)
+
+3. **Run the workflow:**
+   - **Actions** → **Deploy frontend to GitHub Pages** → **Run workflow** (or push to `main`)
+
+The workflow uses `GCP_PROJECT_ID` for `VITE_PROJECT_ID` (same value). After deploy, the app is available at `https://<username>.github.io/<repo>/` (or your custom domain if configured).
+
 ---
 
 ## 6. Verify the deployment
