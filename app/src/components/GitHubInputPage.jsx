@@ -39,21 +39,10 @@ export default function GitHubInputPage({ onJobStarted }) {
 
   return (
     <div className="gh-page">
-      {/* decorative blobs */}
-      <div className="gh-blob gh-blob--1" />
-      <div className="gh-blob gh-blob--2" />
-      <div className="gh-blob gh-blob--3" />
-
       <div className="gh-center">
-        {/* logo / brand */}
+        {/* logo */}
         <div className="gh-brand">
-          <div className="gh-brand__icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span className="gh-brand__name">CodeStory</span>
+          <img src="/logo.png" alt="" className="gh-brand__logo" />
         </div>
 
         <h1 className="gh-headline">
@@ -118,9 +107,6 @@ export default function GitHubInputPage({ onJobStarted }) {
           </div>
         </div>
 
-        <p className="gh-footer">
-          In dev mode? Restart with <code>VITE_DEV_SKIP_PIPELINE=true</code> to go directly to the dashboard.
-        </p>
       </div>
     </div>
   );
