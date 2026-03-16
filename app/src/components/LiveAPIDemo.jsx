@@ -11,7 +11,7 @@ import {
 } from "../utils/media-utils";
 import { ShowAlertTool, AddCSSStyleTool, SwitchSlideTool, SearchDocsTool, DownloadContentTool, ShowDynamicSlideTool } from "../utils/tools";
 import SlideCanvas from "./SlideCanvas";
-import { API_BASE, getSessionId } from "../config";
+import { API_BASE, getSessionId, PROXY_WS_URL, PROJECT_ID, MODEL_ID } from "../config";
 import "./LiveAPIDemo.css";
 
 const CONTENT_API_URL = `${API_BASE}/content`;
@@ -121,16 +121,15 @@ const LiveAPIDemo = ({ onStartNew }) => {
   const [debugInfo, setDebugInfo] = useState("Ready to connect...");
   const [setupJson, setSetupJson] = useState(null);
 
-  // Configuration State
+  // Configuration State — use config (prod build) when set, else localStorage or localhost
   const [proxyUrl, setProxyUrl] = useState(
-    localStorage.getItem("proxyUrl") || "ws://localhost:8080"
+    () => PROXY_WS_URL || localStorage.getItem("proxyUrl") || "ws://localhost:8080"
   );
   const [projectId, setProjectId] = useState(
-    localStorage.getItem("projectId") || ""
+    () => PROJECT_ID || localStorage.getItem("projectId") || ""
   );
   const [model, setModel] = useState(
-    localStorage.getItem("model") ||
-      "gemini-live-2.5-flash-native-audio"
+    () => MODEL_ID || localStorage.getItem("model") || "gemini-live-2.5-flash-native-audio"
   );
 
   useEffect(() => {
@@ -1252,7 +1251,7 @@ Rules:
     <div className="live-api-demo">
       <div className="toolbar">
         <div className="toolbar-left">
-          <img src="/logo.png" alt="CodeStory" className="toolbar-logo" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="toolbar-logo" />
         </div>
         <div className="toolbar-right">
           <div className="dropdown">

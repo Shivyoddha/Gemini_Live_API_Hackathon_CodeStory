@@ -42,7 +42,7 @@ export default function GitHubInputPage({ onJobStarted }) {
       <div className="gh-center">
         {/* logo */}
         <div className="gh-brand">
-          <img src="/logo.png" alt="" className="gh-brand__logo" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="gh-brand__logo" />
         </div>
 
         <h1 className="gh-headline">
