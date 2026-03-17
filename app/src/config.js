@@ -24,10 +24,11 @@ export const PROXY_WS_URL =
 export const PROJECT_ID = import.meta.env.VITE_PROJECT_ID || "";
 
 /**
- * Gemini model ID.
+ * Gemini model ID for Live API.
+ * Use gemini-live-2.5-flash-native-audio (GA) or gemini-live-2.5-flash-preview-native-audio-09-2025 (preview).
  */
 export const MODEL_ID =
-  import.meta.env.VITE_MODEL_ID || "gemini-2.5-flash-preview-05-20";
+  import.meta.env.VITE_MODEL_ID || "gemini-live-2.5-flash-native-audio";
 
 /**
  * Session ID for data isolation. One per browser tab/localStorage.
