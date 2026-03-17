@@ -20,14 +20,14 @@ Experience your code like never before. CodeStory uses advanced agentic workflow
 
 ## Architecture
 
-![Architecture](architecture.jpg)
+![Architecture](architecture.jpeg)
 
 ---
 
 ## Resilience & Error Handling
 
 CodeStory is built to handle the unpredictability of AI agents and distributed systems.
-![Resilience & Error Handling](resilience.png)
+![Resilience & Error Handling](resilience.jpeg)
 
 
 -   **Transient Error Recovery**: AI requests automatically retry up to 3 times with exponential backoff on `429` (Rate Limit) and `5xx` (Server) errors.
