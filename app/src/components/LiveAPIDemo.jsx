@@ -122,9 +122,12 @@ const LiveAPIDemo = ({ onStartNew }) => {
   const [setupJson, setSetupJson] = useState(null);
 
   // Configuration State — use config (prod build) when set, else localStorage or localhost
-  const [proxyUrl, setProxyUrl] = useState(
-    () => PROXY_WS_URL || localStorage.getItem("proxyUrl") || "ws://localhost:8080"
-  );
+  // Only trust localStorage proxyUrl if it looks like a WebSocket URL (avoids project ID being mistaken for proxy URL)
+  const [proxyUrl, setProxyUrl] = useState(() => {
+    const stored = localStorage.getItem("proxyUrl");
+    const validStored = stored && (stored.startsWith("ws://") || stored.startsWith("wss://"));
+    return PROXY_WS_URL || (validStored ? stored : null) || "ws://localhost:8080";
+  });
   const [projectId, setProjectId] = useState(
     () => PROJECT_ID || localStorage.getItem("projectId") || ""
   );

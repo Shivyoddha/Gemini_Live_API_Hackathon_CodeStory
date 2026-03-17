@@ -45,9 +45,9 @@ export class AudioStreamer {
         sampleRate: this.sampleRate,
       });
 
-      // Load the audio worklet module
+      // Load the audio worklet module (use BASE_URL for GitHub Pages subpath)
       await this.audioContext.audioWorklet.addModule(
-        "/audio-processors/capture.worklet.js"
+        `${import.meta.env.BASE_URL}audio-processors/capture.worklet.js`
       );
 
       // Create the audio worklet node
@@ -420,9 +420,9 @@ export class AudioPlayer {
         sampleRate: this.sampleRate,
       });
 
-      // Load the audio worklet from external file
+      // Load the audio worklet from external file (use BASE_URL for GitHub Pages subpath)
       await this.audioContext.audioWorklet.addModule(
-        "/audio-processors/playback.worklet.js"
+        `${import.meta.env.BASE_URL}audio-processors/playback.worklet.js`
       );
 
       // Create worklet node
