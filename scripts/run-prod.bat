@@ -4,13 +4,8 @@ REM Requires: set CODESTORY_PROD_URL=https://your-service.run.app
 setlocal
 cd /d "%~dp0\.."
 
-if "%CODESTORY_PROD_URL%"=="" (
-  echo CODESTORY_PROD_URL is not set.
-  echo Set it to your Cloud Run backend URL, e.g.:
-  echo   set CODESTORY_PROD_URL=https://codestory-backend-XXXXX.run.app
-  echo Then run: scripts\run-prod.bat
-  exit /b 1
-)
+REM Default to team's deployed Cloud Run URL (for judges / zero-config demo)
+if "%CODESTORY_PROD_URL%"=="" set "CODESTORY_PROD_URL=https://codestory-backend-953856802382.us-central1.run.app"
 
 REM Remove trailing slash if present
 if "%CODESTORY_PROD_URL:~-1%"=="/" set "CODESTORY_PROD_URL=%CODESTORY_PROD_URL:~0,-1%"
